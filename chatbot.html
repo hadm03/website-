@@ -240,7 +240,7 @@
             max-width: 260px;
             white-space: normal;
             z-index: 100;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             pointer-events: none;
             line-height: 1.4;
         }
@@ -249,7 +249,7 @@
             background-color: #4A5676;
             border: 1px solid #5A6676;
             color: #E6E9F0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
         .tooltip::before {
@@ -450,6 +450,7 @@
             align-items: center;
             justify-content: flex-end;
             background-color: #fff;
+            position: relative;
         }
 
         body.dark-mode .chat-area {
@@ -494,6 +495,70 @@
         body.dark-mode .chat-message.bot {
             background-color: #3A4666;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Speaker Icon Styling */
+        .chat-message.bot .speaker-icon {
+            font-size: 16px;
+            color: #666;
+            cursor: pointer;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        body.dark-mode .chat-message.bot .speaker-icon {
+            color: #E6E9F0;
+        }
+
+        .chat-message.bot .speaker-icon:hover {
+            color: #333;
+        }
+
+        body.dark-mode .chat-message.bot .speaker-icon:hover {
+            color: #fff;
+        }
+
+        .chat-message.bot .speaker-icon.speaking {
+            color: #007bff !important; /* Màu xanh khi đang phát âm thanh */
+        }
+
+        /* Loading Container */
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .loading-spinner {
+            width: 30px;
+            height: 30px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        body.dark-mode .loading-spinner {
+            border: 4px solid #4A5676;
+            border-top: 4px solid #E6E9F0;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        body.dark-mode .loading-text {
+            color: #E6E9F0;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Input area */
@@ -568,6 +633,18 @@
             color: #E6E9F0;
         }
 
+        .input-box .icons i:hover {
+            color: #333;
+        }
+
+        body.dark-mode .input-box .icons i:hover {
+            color: #fff;
+        }
+
+        .input-box .icons .mic-btn.recording {
+            color: #ff0000; /* Màu đỏ khi đang ghi âm */
+        }
+
         .input-box .icons .send-btn {
             background-color: #333;
             color: #fff;
@@ -581,6 +658,14 @@
 
         body.dark-mode .input-box .icons .send-btn {
             background-color: #4A5676;
+        }
+
+        .input-box .icons .send-btn:hover {
+            background-color: #555;
+        }
+
+        body.dark-mode .input-box .icons .send-btn:hover {
+            background-color: #5A6676;
         }
     </style>
 </head>
@@ -623,8 +708,7 @@
                 <img src="https://fptjobs.com/public/img/fpt-telecom.png" alt="FPT Telecom Logo" class="logo">
             </div>
             <div class="user">
-                <i class=></i>
-                <span></span>
+                
             </div>
         </div>
 
@@ -646,15 +730,19 @@
                 <input type="text" placeholder="Hỏi bất kỳ điều gì" id="chatInput">
                 <div class="icons">
                     <i class="fas fa-link"></i>
-                    <i class="fas fa-microphone send-btn" id="sendBtn"></i>
+                    <i class="fas fa-microphone mic-btn" id="micBtn"></i>
+                    <i class="fas fa-arrow-right send-btn" id="sendBtn"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Global variable to track the current chat session
+        // Global variables
         let currentChatId = null;
+        let isSpeaking = false;
+        let isRecording = false;
+        let recognition = null;
 
         // Toggle history panel
         const historyPanel = document.getElementById('historyPanel');
@@ -686,36 +774,20 @@
             chatArea.innerHTML = '';
             chatInput.value = '';
             currentChatId = null; // Reset the current chat session
-        });
-
-        // Toggle between microphone and arrow icon based on input
-        const sendBtn = document.getElementById('sendBtn');
-        
-        chatInput.addEventListener('input', () => {
-            if (chatInput.value.trim() !== '') {
-                sendBtn.classList.remove('fa-microphone');
-                sendBtn.classList.add('fa-arrow-right');
-            } else {
-                sendBtn.classList.remove('fa-arrow-right');
-                sendBtn.classList.add('fa-microphone');
-            }
+            // Re-add initial message
+            chatArea.innerHTML = '<div class="chat-message" id="initialMessage">Bạn đang làm về cái gì?</div>';
         });
 
         // Dropdown menu functionality
-        document.querySelectorAll('.ellipsis').forEach(ellipsis => {
-            ellipsis.addEventListener('click', (e) => {
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('ellipsis')) {
                 e.stopPropagation();
-                const dropdown = ellipsis.closest('.dropdown');
+                const dropdown = e.target.closest('.dropdown');
                 document.querySelectorAll('.dropdown').forEach(d => {
                     if (d !== dropdown) d.classList.remove('active');
                 });
                 dropdown.classList.toggle('active');
-            });
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.dropdown')) {
+            } else if (!e.target.closest('.dropdown')) {
                 document.querySelectorAll('.dropdown').forEach(dropdown => {
                     dropdown.classList.remove('active');
                 });
@@ -733,321 +805,18 @@
             } else {
                 const textSpan = document.createElement('span');
                 textSpan.className = 'text';
-                textSpan.textContent = truncateText(newName); // Truncate the edited name for display
+                textSpan.textContent = truncateText(newName);
                 input.replaceWith(textSpan);
-                // Update localStorage after renaming with the full name
                 updateHistoryStorage(historyItem.dataset.id, newName);
             }
         }
 
         // Rename functionality with inline editing
-        document.querySelectorAll('.rename-item').forEach(renameBtn => {
-            renameBtn.addEventListener('click', (e) => {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.rename-item')) {
                 e.preventDefault();
+                const renameBtn = e.target.closest('.rename-item');
                 const historyItem = renameBtn.closest('.history-item');
-                const textSpan = historyItem.querySelector('.text');
-                // Get the full text from localStorage to allow editing the full name
-                const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-                const item = storedHistory.find(item => item.id === historyItem.dataset.id.toString());
-                const currentName = item ? item.text : textSpan.textContent.trim();
-
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'edit-input';
-                input.value = currentName; // Show the full name in the input
-                textSpan.replaceWith(input);
-                input.focus();
-
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        saveEditedName(historyItem, input, currentName);
-                    }
-                });
-
-                input.addEventListener('blur', () => {
-                    saveEditedName(historyItem, input, currentName);
-                });
-            });
-        });
-
-        // Pin functionality
-        document.querySelectorAll('.pin-item').forEach(pinBtn => {
-            pinBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const historyItem = pinBtn.closest('.history-item');
-                const isPinned = historyItem.classList.contains('pinned');
-                const todaySection = document.getElementById('todaySection');
-                const pinIcon = historyItem.querySelector('.pin-icon');
-                const pinText = pinBtn.querySelector('.pin-text');
-
-                if (isPinned) {
-                    historyItem.classList.remove('pinned');
-                    pinIcon.style.display = 'none';
-                    pinText.textContent = 'Ghim';
-                    // Move the unpinned item back to its original position based on timestamp
-                    updateHistorySections();
-                } else {
-                    historyItem.classList.add('pinned');
-                    pinIcon.style.display = 'inline-block';
-                    pinText.textContent = 'Bỏ ghim';
-                    // Prepend the pinned item to the top of the "Hôm nay" section
-                    todaySection.insertBefore(historyItem, todaySection.firstChild.nextSibling); // After the <h4> tag
-                }
-                // Update localStorage after pinning/unpinning
-                updatePinStatus(historyItem.dataset.id, !isPinned);
-            });
-        });
-
-        // Delete functionality
-        document.querySelectorAll('.delete-item').forEach(deleteBtn => {
-            deleteBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const historyItem = deleteBtn.closest('.history-item');
-                const id = historyItem.dataset.id;
-                historyItem.remove();
-                // Remove from localStorage
-                removeHistoryFromStorage(id);
-                removeChatFromStorage(id);
-                if (currentChatId === id) {
-                    currentChatId = null;
-                    chatArea.innerHTML = '<div class="chat-message" id="initialMessage">Bạn đang làm về cái gì?</div>';
-                }
-            });
-        });
-
-        // Navigate to index.html when clicking the logo
-        const logo = document.querySelector('.header .logo');
-        logo.addEventListener('click', () => {
-            window.location.href = 'dashboard.html';
-        });
-
-        // Function to calculate the difference in days between two dates
-        function getDaysDifference(date1, date2) {
-            const oneDay = 24 * 60 * 60 * 1000; // Milliseconds in a day
-            const d1 = new Date(date1);
-            const d2 = new Date(date2);
-            // Reset time to midnight for accurate day comparison
-            d1.setHours(0, 0, 0, 0);
-            d2.setHours(0, 0, 0, 0);
-            return Math.round(Math.abs((d1 - d2) / oneDay));
-        }
-
-        // Function to calculate and format time elapsed (e.g., "9 giờ trước")
-        function getTimeElapsed(timestamp) {
-            // Fallback if timestamp is invalid
-            if (!timestamp || isNaN(new Date(timestamp))) {
-                return 'Vừa xong';
-            }
-
-            const now = new Date();
-            const messageTime = new Date(timestamp);
-            const diffMs = now - messageTime; // Difference in milliseconds
-
-            // If the difference is negative or invalid, return a default
-            if (diffMs < 0 || isNaN(diffMs)) {
-                return 'Vừa xong';
-            }
-
-            const diffSeconds = Math.floor(diffMs / 1000);
-            const diffMinutes = Math.floor(diffSeconds / 60);
-            const diffHours = Math.floor(diffMinutes / 60);
-            const diffDays = Math.floor(diffHours / 24);
-
-            if (diffDays >= 1) {
-                return ''; // Days difference is handled by sections ("Hôm nay", "Hôm qua", etc.)
-            } else if (diffHours >= 1) {
-                return `${diffHours} giờ trước`;
-            } else if (diffMinutes >= 1) {
-                return `${diffMinutes} phút trước`;
-            } else {
-                return `${diffSeconds} giây trước`;
-            }
-        }
-
-        // Function to truncate text to the first 4 words for display in history panel
-        function truncateText(text) {
-            const words = text.trim().split(/\s+/); // Split by whitespace
-            if (words.length > 4) {
-                return words.slice(0, 4).join(' ') + '...';
-            }
-            return words.join(' ');
-        }
-
-        // Load history from localStorage on page load and categorize by date
-        function loadHistoryFromStorage() {
-            const todaySection = document.getElementById('todaySection');
-            const yesterdaySection = document.getElementById('yesterdaySection');
-            const threeDaysAgoSection = document.getElementById('threeDaysAgoSection');
-            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-            let nextId = 1;
-
-            // Find the highest ID to determine the next ID for new entries
-            storedHistory.forEach(item => {
-                const itemId = parseInt(item.id);
-                if (itemId >= nextId) {
-                    nextId = itemId + 1;
-                }
-            });
-
-            // Set the next ID for new history items
-            window.nextHistoryId = nextId;
-
-            // Clear existing items in sections (except the headers)
-            todaySection.innerHTML = '<h4>Hôm nay</h4>';
-            yesterdaySection.innerHTML = '<h4>Hôm qua</h4>';
-            threeDaysAgoSection.innerHTML = '<h4>3 ngày trước</h4>';
-
-            // Sort history items: pinned items at the top, then by lastMessageAt (newest first)
-            storedHistory.sort((a, b) => {
-                if (a.pinned && !b.pinned) return -1;
-                if (!a.pinned && b.pinned) return 1;
-                return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
-            });
-
-            // Categorize history items based on their creation date
-            const currentDate = new Date();
-            storedHistory.forEach(item => {
-                const daysDiff = getDaysDifference(currentDate, item.createdAt);
-                const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
-
-                if (item.pinned || daysDiff === 0) {
-                    // Pinned items and today's items go to "Hôm nay", with pinned at the top due to sorting
-                    todaySection.appendChild(historyItem);
-                } else if (daysDiff === 1) {
-                    yesterdaySection.appendChild(historyItem);
-                } else if (daysDiff >= 3) {
-                    threeDaysAgoSection.appendChild(historyItem);
-                }
-            });
-        }
-
-        // Real-time update of history sections and timestamps
-        function updateHistorySections() {
-            const todaySection = document.getElementById('todaySection');
-            const yesterdaySection = document.getElementById('yesterdaySection');
-            const threeDaysAgoSection = document.getElementById('threeDaysAgoSection');
-            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-            if (storedHistory.length === 0) return;
-
-            // Clear existing items in sections (except the headers)
-            todaySection.innerHTML = '<h4>Hôm nay</h4>';
-            yesterdaySection.innerHTML = '<h4>Hôm qua</h4>';
-            threeDaysAgoSection.innerHTML = '<h4>3 ngày trước</h4>';
-
-            // Sort history items: pinned items at the top, then by lastMessageAt (newest first)
-            storedHistory.sort((a, b) => {
-                if (a.pinned && !b.pinned) return -1;
-                if (!a.pinned && b.pinned) return 1;
-                return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
-            });
-
-            // Re-categorize history items
-            const currentDate = new Date();
-            storedHistory.forEach(item => {
-                const daysDiff = getDaysDifference(currentDate, item.createdAt);
-                const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
-
-                if (item.pinned || daysDiff === 0) {
-                    todaySection.appendChild(historyItem);
-                } else if (daysDiff === 1) {
-                    yesterdaySection.appendChild(historyItem);
-                } else if (daysDiff >= 3) {
-                    threeDaysAgoSection.appendChild(historyItem);
-                }
-            });
-        }
-
-        // Create a new history item element with truncated text and timestamp display
-        function createHistoryItem(id, text, isPinned = false, createdAt, lastMessageAt) {
-            const historyItem = document.createElement('div');
-            historyItem.className = `history-item ${isPinned ? 'pinned' : ''}`;
-            historyItem.dataset.id = id;
-
-            // Truncate the text for display to the first 4 words
-            const displayText = truncateText(text);
-
-            // Use lastMessageAt if available, otherwise fallback to createdAt
-            const timestamp = lastMessageAt || createdAt;
-            const timeElapsed = getTimeElapsed(timestamp);
-
-            // Get the full text from localStorage for the tooltip
-            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-            const item = storedHistory.find(item => item.id === id.toString());
-            const fullText = item ? item.text : text;
-
-            historyItem.innerHTML = `
-                <div class="text-container">
-                    <span class="pin-icon" style="display: ${isPinned ? 'inline-block' : 'none'};"><i class="fas fa-thumbtack"></i></span>
-                    <span class="text" data-fulltext="${fullText}">${displayText}</span>
-                </div>
-                <span class="timestamp">${timeElapsed}</span>
-                <div class="dropdown">
-                    <i class="fas fa-ellipsis-v ellipsis"></i>
-                    <div class="dropdown-content">
-                        <a href="#" class="pin-item"><i class="fas fa-thumbtack"></i> <span class="pin-text">${isPinned ? 'Bỏ ghim' : 'Ghim'}</span></a>
-                        <a href="#" class="rename-item"><i class="fas fa-pen"></i> Đổi tên</a>
-                        <a href="#" class="delete-item"><i class="fas fa-trash"></i> Xóa</a>
-                    </div>
-                </div>
-            `;
-
-            // Add hover event listeners for the tooltip
-            const textSpan = historyItem.querySelector('.text');
-            let tooltip = null;
-
-            textSpan.addEventListener('mouseover', (e) => {
-                // Only show tooltip if the text is truncated
-                const words = fullText.trim().split(/\s+/);
-                if (words.length <= 4) return; // No tooltip if text isn't truncated
-
-                tooltip = document.createElement('div');
-                tooltip.className = 'tooltip';
-                tooltip.textContent = fullText;
-                historyItem.appendChild(tooltip);
-
-                // Position the tooltip below the textSpan
-                const textRect = textSpan.getBoundingClientRect();
-                const historyPanelRect = historyPanel.getBoundingClientRect();
-                const tooltipRect = tooltip.getBoundingClientRect();
-
-                // Center the tooltip below the text
-                let left = textRect.left + (textRect.width / 2) - (tooltipRect.width / 2);
-                const top = textRect.bottom + 8; // 8px gap below the text
-
-                // Ensure the tooltip stays within the history panel
-                const panelLeft = historyPanelRect.left;
-                const panelRight = historyPanelRect.right;
-                const panelWidth = historyPanelRect.width;
-
-                if (left < panelLeft) {
-                    left = panelLeft + 10; // 10px padding from the left edge
-                } else if (left + tooltipRect.width > panelRight) {
-                    left = panelRight - tooltipRect.width - 10; // 10px padding from the right edge
-                }
-
-                tooltip.style.left = `${left}px`;
-                tooltip.style.top = `${top}px`;
-            });
-
-            textSpan.addEventListener('mouseout', () => {
-                if (tooltip) {
-                    tooltip.remove();
-                    tooltip = null;
-                }
-            });
-
-            // Reattach event listeners for the new item
-            historyItem.querySelector('.ellipsis').addEventListener('click', (e) => {
-                e.stopPropagation();
-                const dropdown = historyItem.querySelector('.dropdown');
-                document.querySelectorAll('.dropdown').forEach(d => {
-                    if (d !== dropdown) d.classList.remove('active');
-                });
-                dropdown.classList.toggle('active');
-            });
-
-            historyItem.querySelector('.rename-item').addEventListener('click', (e) => {
-                e.preventDefault();
                 const textSpan = historyItem.querySelector('.text');
                 const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
                 const item = storedHistory.find(item => item.id === historyItem.dataset.id.toString());
@@ -1069,34 +838,41 @@
                 input.addEventListener('blur', () => {
                     saveEditedName(historyItem, input, currentName);
                 });
-            });
+            }
+        });
 
-            historyItem.querySelector('.pin-item').addEventListener('click', (e) => {
+        // Pin functionality
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.pin-item')) {
                 e.preventDefault();
-                const historyItem = e.target.closest('.history-item');
+                const pinBtn = e.target.closest('.pin-item');
+                const historyItem = pinBtn.closest('.history-item');
                 const isPinned = historyItem.classList.contains('pinned');
                 const todaySection = document.getElementById('todaySection');
                 const pinIcon = historyItem.querySelector('.pin-icon');
-                const pinText = historyItem.querySelector('.pin-text');
+                const pinText = pinBtn.querySelector('.pin-text');
 
                 if (isPinned) {
                     historyItem.classList.remove('pinned');
                     pinIcon.style.display = 'none';
                     pinText.textContent = 'Ghim';
-                    // Move the unpinned item back to its original position based on timestamp
                     updateHistorySections();
                 } else {
                     historyItem.classList.add('pinned');
                     pinIcon.style.display = 'inline-block';
                     pinText.textContent = 'Bỏ ghim';
-                    // Prepend the pinned item to the top of the "Hôm nay" section
-                    todaySection.insertBefore(historyItem, todaySection.firstChild.nextSibling); // After the <h4> tag
+                    todaySection.insertBefore(historyItem, todaySection.firstChild.nextSibling);
                 }
                 updatePinStatus(historyItem.dataset.id, !isPinned);
-            });
+            }
+        });
 
-            historyItem.querySelector('.delete-item').addEventListener('click', (e) => {
+        // Delete functionality
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.delete-item')) {
                 e.preventDefault();
+                const deleteBtn = e.target.closest('.delete-item');
+                const historyItem = deleteBtn.closest('.history-item');
                 const id = historyItem.dataset.id;
                 historyItem.remove();
                 removeHistoryFromStorage(id);
@@ -1105,11 +881,209 @@
                     currentChatId = null;
                     chatArea.innerHTML = '<div class="chat-message" id="initialMessage">Bạn đang làm về cái gì?</div>';
                 }
+            }
+        });
+
+        // Navigate to dashboard.html when clicking the logo
+        const logo = document.querySelector('.header .logo');
+        logo.addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+        });
+
+        // Function to calculate the difference in days between two dates
+        function getDaysDifference(date1, date2) {
+            const oneDay = 24 * 60 * 60 * 1000;
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            d1.setHours(0, 0, 0, 0);
+            d2.setHours(0, 0, 0, 0);
+            return Math.round(Math.abs((d1 - d2) / oneDay));
+        }
+
+        // Function to calculate and format time elapsed
+        function getTimeElapsed(timestamp) {
+            if (!timestamp || isNaN(new Date(timestamp))) {
+                return 'Vừa xong';
+            }
+
+            const now = new Date();
+            const messageTime = new Date(timestamp);
+            const diffMs = now - messageTime;
+
+            if (diffMs < 0 || isNaN(diffMs)) {
+                return 'Vừa xong';
+            }
+
+            const diffSeconds = Math.floor(diffMs / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffDays >= 1) {
+                return '';
+            } else if (diffHours >= 1) {
+                return `${diffHours} giờ trước`;
+            } else if (diffMinutes >= 1) {
+                return `${diffMinutes} phút trước`;
+            } else {
+                return `${diffSeconds} giây trước`;
+            }
+        }
+
+        // Function to truncate text to the first 4 words
+        function truncateText(text) {
+            const words = text.trim().split(/\s+/);
+            if (words.length > 4) {
+                return words.slice(0, 4).join(' ') + '...';
+            }
+            return words.join(' ');
+        }
+
+        // Load history from localStorage
+        function loadHistoryFromStorage() {
+            const todaySection = document.getElementById('todaySection');
+            const yesterdaySection = document.getElementById('yesterdaySection');
+            const threeDaysAgoSection = document.getElementById('threeDaysAgoSection');
+            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            let nextId = 1;
+
+            storedHistory.forEach(item => {
+                const itemId = parseInt(item.id);
+                if (itemId >= nextId) {
+                    nextId = itemId + 1;
+                }
             });
 
-            // Add click event to display chat history and set current chat session
+            window.nextHistoryId = nextId;
+
+            todaySection.innerHTML = '<h4>Hôm nay</h4>';
+            yesterdaySection.innerHTML = '<h4>Hôm qua</h4>';
+            threeDaysAgoSection.innerHTML = '<h4>3 ngày trước</h4>';
+
+            storedHistory.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
+            });
+
+            const currentDate = new Date();
+            storedHistory.forEach(item => {
+                const daysDiff = getDaysDifference(currentDate, item.createdAt);
+                const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
+
+                if (item.pinned || daysDiff === 0) {
+                    todaySection.appendChild(historyItem);
+                } else if (daysDiff === 1) {
+                    yesterdaySection.appendChild(historyItem);
+                } else if (daysDiff >= 3) {
+                    threeDaysAgoSection.appendChild(historyItem);
+                }
+            });
+        }
+
+        // Real-time update of history sections
+        function updateHistorySections() {
+            const todaySection = document.getElementById('todaySection');
+            const yesterdaySection = document.getElementById('yesterdaySection');
+            const threeDaysAgoSection = document.getElementById('threeDaysAgoSection');
+            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            if (storedHistory.length === 0) return;
+
+            todaySection.innerHTML = '<h4>Hôm nay</h4>';
+            yesterdaySection.innerHTML = '<h4>Hôm qua</h4>';
+            threeDaysAgoSection.innerHTML = '<h4>3 ngày trước</h4>';
+
+            storedHistory.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
+            });
+
+            const currentDate = new Date();
+            storedHistory.forEach(item => {
+                const daysDiff = getDaysDifference(currentDate, item.createdAt);
+                const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
+
+                if (item.pinned || daysDiff === 0) {
+                    todaySection.appendChild(historyItem);
+                } else if (daysDiff === 1) {
+                    yesterdaySection.appendChild(historyItem);
+                } else if (daysDiff >= 3) {
+                    threeDaysAgoSection.appendChild(historyItem);
+                }
+            });
+        }
+
+        // Create a new history item element
+        function createHistoryItem(id, text, isPinned = false, createdAt, lastMessageAt) {
+            const historyItem = document.createElement('div');
+            historyItem.className = `history-item ${isPinned ? 'pinned' : ''}`;
+            historyItem.dataset.id = id;
+
+            const displayText = truncateText(text);
+            const timestamp = lastMessageAt || createdAt;
+            const timeElapsed = getTimeElapsed(timestamp);
+            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            const item = storedHistory.find(item => item.id === id.toString());
+            const fullText = item ? item.text : text;
+
+            historyItem.innerHTML = `
+                <div class="text-container">
+                    <span class="pin-icon" style="display: ${isPinned ? 'inline-block' : 'none'};"><i class="fas fa-thumbtack"></i></span>
+                    <span class="text" data-fulltext="${fullText}">${displayText}</span>
+                </div>
+                <span class="timestamp">${timeElapsed}</span>
+                <div class="dropdown">
+                    <i class="fas fa-ellipsis-v ellipsis"></i>
+                    <div class="dropdown-content">
+                        <a href="#" class="pin-item"><i class="fas fa-thumbtack"></i> <span class="pin-text">${isPinned ? 'Bỏ ghim' : 'Ghim'}</span></a>
+                        <a href="#" class="rename-item"><i class="fas fa-pen"></i> Đổi tên</a>
+                        <a href="#" class="delete-item"><i class="fas fa-trash"></i> Xóa</a>
+                    </div>
+                </div>
+            `;
+
+            const textSpan = historyItem.querySelector('.text');
+            let tooltip = null;
+
+            textSpan.addEventListener('mouseover', (e) => {
+                const words = fullText.trim().split(/\s+/);
+                if (words.length <= 4) return;
+
+                tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = fullText;
+                historyItem.appendChild(tooltip);
+
+                const textRect = textSpan.getBoundingClientRect();
+                const historyPanelRect = historyPanel.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+
+                let left = textRect.left + (textRect.width / 2) - (tooltipRect.width / 2);
+                const top = textRect.bottom + 8;
+
+                const panelLeft = historyPanelRect.left;
+                const panelRight = historyPanelRect.right;
+
+                if (left < panelLeft) {
+                    left = panelLeft + 10;
+                } else if (left + tooltipRect.width > panelRight) {
+                    left = panelRight - tooltipRect.width - 10;
+                }
+
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+            });
+
+            textSpan.addEventListener('mouseout', () => {
+                if (tooltip) {
+                    tooltip.remove();
+                    tooltip = null;
+                }
+            });
+
             historyItem.addEventListener('click', (e) => {
-                if (e.target.closest('.dropdown')) return; // Ignore clicks on dropdown menu
+                if (e.target.closest('.dropdown')) return;
                 currentChatId = id;
                 displayChatHistory(id);
             });
@@ -1123,31 +1097,31 @@
             const storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
             const chat = storedChats.find(chat => chat.id === id.toString());
 
-            // Clear the chat area
             chatArea.innerHTML = '';
 
             if (chat && chat.messages.length > 0) {
-                // Display each message in the chat history
                 chat.messages.forEach(message => {
                     appendMessage(message.text, message.type);
                 });
             } else {
-                // If no chat history exists, show the initial message
-                chatArea.innerHTML = '<div class="chat-message" id="initialMessage">Bạn đang làm về cái gì?</div>';
+                const initialMessage = document.createElement('div');
+                initialMessage.className = 'chat-message';
+                initialMessage.id = 'initialMessage';
+                initialMessage.textContent = 'Bạn đang làm về cái gì?';
+                chatArea.appendChild(initialMessage);
             }
 
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
-        // Add a new history item to localStorage with creation date
+        // Add a new history item to localStorage
         function addHistoryToStorage(id, text) {
             const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
             const now = new Date();
             const createdAt = now.toISOString();
-            const lastMessageAt = createdAt; // Initial message time
+            const lastMessageAt = createdAt;
             storedHistory.push({ id: id.toString(), text, pinned: false, createdAt, lastMessageAt });
             localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
-            // Immediately update the history panel to reflect the new item
             updateHistorySections();
         }
 
@@ -1158,7 +1132,7 @@
             localStorage.setItem('chatConversations', JSON.stringify(storedChats));
         }
 
-        // Append a message to an existing chat conversation in localStorage and update last message time
+        // Append a message to an existing chat conversation
         function appendMessageToChat(id, message) {
             const storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
             const chatIndex = storedChats.findIndex(chat => chat.id === id.toString());
@@ -1169,14 +1143,12 @@
             }
             localStorage.setItem('chatConversations', JSON.stringify(storedChats));
 
-            // Update lastMessageAt in chatHistory
             const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
             const historyIndex = storedHistory.findIndex(item => item.id === id.toString());
             if (historyIndex !== -1) {
                 storedHistory[historyIndex].lastMessageAt = new Date().toISOString();
                 localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
             }
-            // Immediately update the history panel to reflect the updated timestamp
             updateHistorySections();
         }
 
@@ -1188,7 +1160,7 @@
                 storedHistory[index].text = newText;
                 localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
             }
-            updateHistorySections(); // Refresh the history panel to reflect the updated text
+            updateHistorySections();
         }
 
         // Update pin status in localStorage
@@ -1215,107 +1187,241 @@
             localStorage.setItem('chatConversations', JSON.stringify(storedChats));
         }
 
-        // API Integration
+        // Function to append a message to the chat area
+        function appendMessage(text, type) {
+            const msg = document.createElement("div");
+            msg.className = `chat-message ${type}`;
+            if (type === 'bot') {
+                const contentWrapper = document.createElement('div');
+                contentWrapper.style.display = 'inline-flex';
+                contentWrapper.style.alignItems = 'center';
+                
+                const speakerIcon = document.createElement('i');
+                speakerIcon.className = 'fas fa-volume-up speaker-icon';
+                contentWrapper.appendChild(speakerIcon);
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = text;
+                contentWrapper.appendChild(textSpan);
+                
+                msg.appendChild(contentWrapper);
+            } else if (type === 'error') {
+                msg.textContent = text;
+                msg.style.color = '#ff0000'; // Màu đỏ cho tin nhắn lỗi
+            } else {
+                msg.textContent = text;
+            }
+            document.getElementById("chatArea").appendChild(msg);
+            return msg;
+        }
+
+        // Function to create a loading container
+        function createLoadingContainer() {
+            const loadingContainer = document.createElement('div');
+            loadingContainer.className = 'loading-container';
+            loadingContainer.innerHTML = `
+                <div class="loading-spinner"></div>
+                <span class="loading-text">Vui lòng chờ trong giây lát...</span>
+            `;
+            document.getElementById("chatArea").appendChild(loadingContainer);
+            return loadingContainer;
+        }
+
+        // Function to check if Web Speech API is supported
+        function isSpeechSynthesisSupported() {
+            return 'speechSynthesis' in window;
+        }
+
+        // Function to speak text using Web Speech API
+        function speakText(text, speakerIcon) {
+            if (!isSpeechSynthesisSupported()) {
+                alert('Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.');
+                return;
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'vi-VN';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            document.querySelectorAll('.speaker-icon.speaking').forEach(icon => {
+                icon.classList.remove('speaking');
+            });
+
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+                return;
+            }
+
+            isSpeaking = true;
+            speakerIcon.classList.add('speaking');
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                speakerIcon.classList.remove('speaking');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Add click event listener for speaker icons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('speaker-icon')) {
+                const messageText = e.target.parentElement.querySelector('span').textContent;
+                speakText(messageText, e.target);
+            }
+        });
+
+        // Speech Recognition Setup
+        function setupSpeechRecognition() {
+            if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+                alert('Trình duyệt của bạn không hỗ trợ tính năng nhận diện giọng nói.');
+                return null;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'vi-VN';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            return recognition;
+        }
+
+        // Handle speech recognition
+        function startSpeechRecognition() {
+            if (isRecording) {
+                recognition.stop();
+                return;
+            }
+
+            recognition = setupSpeechRecognition();
+            if (!recognition) return;
+
+            isRecording = true;
+            document.getElementById('micBtn').classList.add('recording');
+            chatInput.value = '';
+            chatInput.placeholder = 'Đang nghe...';
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                chatInput.value = transcript;
+                chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                document.getElementById('micBtn').classList.remove('recording');
+                isRecording = false;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Lỗi nhận diện giọng nói:', event.error);
+                alert('Lỗi nhận diện giọng nói: ' + event.error);
+                chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                document.getElementById('micBtn').classList.remove('recording');
+                isRecording = false;
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                    document.getElementById('micBtn').classList.remove('recording');
+                    isRecording = false;
+                }
+            };
+
+            recognition.start();
+        }
+
+        // Function to clean metadata from bot response
+        function cleanMeta(text) {
+            if (typeof text !== 'string') return '';
+            const metaIndex = text.indexOf("[[[META-B64]]]");
+            return metaIndex >= 0 ? text.substring(0, metaIndex).trim() : text.trim();
+        }
+
+        // API Integration with improved error handling
         async function sendQuestion() {
             const input = document.getElementById("chatInput");
             const chatBox = document.getElementById("chatArea");
             const question = input.value.trim();
             if (!question) return;
 
-            // Remove the initial message if it exists
             const initialMessage = document.getElementById("initialMessage");
             if (initialMessage) {
                 initialMessage.remove();
             }
 
+            let userMessage;
             if (currentChatId) {
-                // Append to existing chat session
-                appendMessage(question, 'user');
+                userMessage = appendMessage(question, 'user');
                 appendMessageToChat(currentChatId, { text: question, type: 'user', timestamp: new Date().toISOString() });
             } else {
-                // Create a new chat session
                 const historyId = window.nextHistoryId++;
                 currentChatId = historyId;
 
-                appendMessage(question, 'user');
-
-                // Add the user's question to history with creation date
+                userMessage = appendMessage(question, 'user');
                 const todaySection = document.getElementById('todaySection');
                 const historyItem = createHistoryItem(historyId, question);
                 todaySection.appendChild(historyItem);
                 addHistoryToStorage(historyId, question);
-
-                // Initialize the chat conversation in localStorage
                 addChatToStorage(historyId, [{ text: question, type: 'user', timestamp: new Date().toISOString() }]);
             }
 
             input.value = '';
 
+            // Add loading container after the user's message
+            const loadingContainer = createLoadingContainer();
+
             try {
-                let botResponse = "❔ Bot không có câu trả lời.";
-                const timestamp = "10:07 PM +07 on Monday, May 19, 2025"; // Cập nhật thời gian hiện tại
+                const response = await fetch("https://open-baboon-oddly.ngrok-free.app/databot", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ bot_Question: question, account_id: 1 })
+                });
 
-                // Check for the specific query about chiller operation
-                const normalizedQuestion = question.toLowerCase().trim();
-                if (normalizedQuestion === "quy trình vận hành chiller" || 
-                    normalizedQuestion.includes("quy trình vận hành") && 
-                    normalizedQuestion.includes("chiller")) {
-                    botResponse = `
-**Quy trình vận hành chiller:**
-
-1. **Kiểm tra trước khi vận hành:**  
-   - Đảm bảo tắt các CB (máy cắt) điều khiển.  
-   - Trong trường hợp máy không được cấp nguồn trong thời gian dài, phải cấp nguồn cho máy trước 8 tiếng rồi mới được khởi động máy.  
-
-2. **Khởi động chiller:**  
-   - Đảm bảo tắt các van nước điều khiển.  
-   - Bơm nước vào hệ thống để kiểm tra áp suất nước (kiểm tra có áp bơm).  
-   - Không được khởi động khi màn hình chiller báo lỗi.  
-
-3. **Bật/Tắt chiller:**  
-   - Nhấn vào nút On/Off để mở điều khiển trên màn hình, sau đó bấm vào "Yes" để xác nhận hoạt động "No" để hủy bỏ.  
-   - Theo dõi trạng thái qua nút On/Off và đèn báo trạng thái bên phải màn hình.  
-
-**Quy trình vận hành tủ điều khiển quạt kết nước:**  
-1. **Chế độ vận hành tủ điều khiển:**  
-   - Đèn kiểm hoạt động:  
-     - Câu đỏ, câu chỉ động; nút E-STOP không kích hoạt; không có lỗi.  
-     - Đèn tắt câu công tác (quạt gián tiếp, bơm nước, quạt đối) vê chế độ A (Auto).  
-   - Trình tự khởi động theo thời gian:  
-     - Sau 10 giây: Quạt 1-5 khởi động.  
-     - Sau thêm 5 giây: Quạt 6-10 khởi động.  
-     - Sau thêm 5 giây: Bơm nước vào quạt gián tiếp đầu hoạt động.  
-   - Khi tắt hệ thống: Tắt tất cả thiết bị trước khi nguồn điện.  
-
-2. **Xử lý khi tắt:**  
-   - Đèn "FAULT" sáng → thiệt bị dừng.  
-   - Nhấn "Reset" để khởi phục sau khi kiểm tra.  
-
-**Thời gian phản hồi:** ${timestamp}
-                    `;
-                } else {
-                    const response = await fetch("https://open-baboon-oddly.ngrok-free.app/databot", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ bot_Question: question, account_id: 1 })
-                    });
-
-                    const data = await response.json();
-                    botResponse = data.data.bot_Answer || "❔ Bot không có câu trả lời.";
-
-                    // Clean metadata but do not truncate for other queries
-                    botResponse = cleanMeta(botResponse);
-                    botResponse += `\n\n**Thời gian phản hồi:** ${timestamp}`;
+                // Kiểm tra trạng thái HTTP
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
                 }
 
-                // Add bot's response to chat area and localStorage
+                const data = await response.json();
+
+                // Kiểm tra dữ liệu trả về từ API
+                if (!data || !data.data || !data.data.bot_Answer) {
+                    throw new Error("API không trả về dữ liệu hợp lệ hoặc không có câu trả lời.");
+                }
+
+                let botResponse = cleanMeta(data.data.bot_Answer);
+
+                // Nếu không có câu trả lời hợp lệ
+                if (!botResponse || botResponse.trim() === '') {
+                    botResponse = "❔ Bot không trả lời.";
+                }
+
+                // Remove loading container
+                loadingContainer.remove();
+
                 appendMessage(botResponse, 'bot');
                 appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date().toISOString() });
 
             } catch (error) {
-                const errorMessage = `❌ Lỗi: ${error.message}\n\n**Thời gian phản hồi:** ${timestamp}`;
+                console.error('Lỗi khi gọi API:', error);
+
+                // Remove loading container on error
+                loadingContainer.remove();
+
+                let errorMessage;
+                if (error.message.includes('HTTP error')) {
+                    errorMessage = `❌ Lỗi: Không thể kết nối đến server. (${error.message})`;
+                } else if (error.message.includes('API không trả về dữ liệu')) {
+                    errorMessage = `❌ Lỗi: API không trả về câu trả lời hợp lệ. Vui lòng thử lại.`;
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = `❌ Lỗi: Không thể kết nối đến API. Vui lòng kiểm tra mạng hoặc URL API.`;
+                } else {
+                    errorMessage = `❌ Lỗi không xác định: ${error.message}`;
+                }
+
                 appendMessage(errorMessage, 'error');
                 appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date().toISOString() });
             }
@@ -1323,23 +1429,12 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        function appendMessage(text, type) {
-            const msg = document.createElement("div");
-            msg.className = `chat-message ${type}`;
-            msg.textContent = text;
-            document.getElementById("chatArea").appendChild(msg);
-        }
-
-        function cleanMeta(text) {
-            const metaIndex = text.indexOf("[[[META-B64]]]");
-            return metaIndex >= 0 ? text.substring(0, metaIndex).trim() : text.trim();
-        }
-
-        // Attach sendQuestion to send button
-        document.getElementById("sendBtn").addEventListener('click', sendQuestion);
+        // Attach click event listeners
+        document.getElementById('micBtn').addEventListener('click', startSpeechRecognition);
+        document.getElementById('sendBtn').addEventListener('click', sendQuestion);
 
         // Attach sendQuestion to Enter key
-        document.getElementById("chatInput").addEventListener('keydown', (e) => {
+        document.getElementById('chatInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 sendQuestion();
             }
@@ -1348,10 +1443,8 @@
         // Load history when the page loads
         window.addEventListener('load', () => {
             loadHistoryFromStorage();
-            // Start real-time updates every minute (60000 milliseconds)
             setInterval(updateHistorySections, 60000);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933e4363e99eb01c',t:'MTc0NTI1Mjk5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
