@@ -447,7 +447,7 @@
             padding: 40px;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: center; /* Căn giữa các tin nhắn */
             justify-content: flex-end;
             background-color: #fff;
             position: relative;
@@ -459,29 +459,35 @@
 
         .chat-message {
             max-width: 600px;
-            text-align: left;
             font-size: 16px;
             color: #333;
             margin-bottom: 20px;
-            white-space: pre-wrap;
+            white-space: pre-wrap; /* Allow wrapping for all messages */
+            word-break: break-word; /* Ensure long words break */
+            margin-left: auto; /* Center messages */
+            margin-right: auto; /* Center messages */
+            display: flex;
+            flex-direction: column;
         }
 
         .chat-message.user {
             background-color: #e0e0e0;
-            align-self: flex-end;
-            text-align: right;
-            white-space: nowrap;
             padding: 15px 25px;
             border-radius: 10px;
+            text-align: justify; /* Justify text to distribute evenly */
+            display: flex;
+            align-items: flex-start; /* Align text to the top of the bubble */
         }
 
         .chat-message.bot {
-            align-self: flex-start;
             position: relative;
             background-color: #f5f5f5;
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
             padding: 15px 20px;
+            text-align: justify; /* Changed from text-align: left to justify text */
+            display: flex;
+            align-items: flex-start; /* Align text to the top of the bubble */
         }
 
         body.dark-mode .chat-message {
@@ -1232,17 +1238,44 @@
             return 'speechSynthesis' in window;
         }
 
-        // Function to speak text using Web Speech API
-        function speakText(text, speakerIcon) {
+        // Function to get the Vietnamese voice
+        function getVietnameseVoice() {
+            return new Promise((resolve) => {
+                let voices = window.speechSynthesis.getVoices();
+                if (voices.length === 0) {
+                    // Nếu danh sách giọng chưa tải, chờ sự kiện voiceschanged
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        voices = window.speechSynthesis.getVoices();
+                        resolve(voices.find(voice => voice.lang === 'vi-VN' || voice.lang.startsWith('vi-')) || null);
+                    };
+                } else {
+                    resolve(voices.find(voice => voice.lang === 'vi-VN' || voice.lang.startsWith('vi-')) || null);
+                }
+            });
+        }
+
+        // Function to speak text using Web Speech API with Vietnamese voice
+        async function speakText(text, speakerIcon) {
             if (!isSpeechSynthesisSupported()) {
                 alert('Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.');
                 return;
             }
+
             const utterance = new SpeechSynthesisUtterance(text);
+            const vietnameseVoice = await getVietnameseVoice();
+
+            // Đặt ngôn ngữ mặc định là vi-VN
             utterance.lang = 'vi-VN';
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            utterance.volume = 1;
+            utterance.rate = 1; // Tốc độ nói
+            utterance.pitch = 1; // Cao độ giọng
+            utterance.volume = 1; // Âm lượng
+
+            // Nếu có giọng tiếng Việt, sử dụng nó
+            if (vietnameseVoice) {
+                utterance.voice = vietnameseVoice;
+            } else {
+                console.warn('Không tìm thấy giọng nói tiếng Việt, sử dụng giọng mặc định với ngôn ngữ vi-VN.');
+            }
 
             document.querySelectorAll('.speaker-icon.speaking').forEach(icon => {
                 icon.classList.remove('speaking');
@@ -1260,6 +1293,13 @@
             utterance.onend = () => {
                 isSpeaking = false;
                 speakerIcon.classList.remove('speaking');
+            };
+
+            utterance.onerror = (event) => {
+                console.error('Lỗi khi phát âm thanh:', event.error);
+                isSpeaking = false;
+                speakerIcon.classList.remove('speaking');
+                alert('Đã xảy ra lỗi khi phát âm thanh. Vui lòng thử lại.');
             };
 
             window.speechSynthesis.speak(utterance);
