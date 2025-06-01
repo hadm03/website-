@@ -421,7 +421,7 @@
             color: #E6E9F0;
         }
 
-        /* Title Below Header */
+        /* Title Section Below Header */
         .title-section {
             padding: 10px 30px;
             background-color: #fff;
@@ -441,13 +441,80 @@
             color: #E6E9F0;
         }
 
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            padding: 20px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        body.dark-mode .welcome-message {
+            color: #E6E9F0;
+        }
+
+        /* Template Questions */
+        .template-questions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 cột */
+            gap: 10px; /* Giảm khoảng cách giữa các cột và hàng từ 15px xuống 10px */
+            padding: 0 30px 20px;
+            background-color: #fff;
+            justify-items: center;
+        }
+
+        body.dark-mode .template-questions {
+            background-color: #1E2A44;
+        }
+
+        .template-question {
+            display: flex;
+            align-items: center;
+            background-color: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: 100%;
+            max-width: 200px;
+            gap: 8px;
+        }
+
+        body.dark-mode .template-question {
+            background-color: #3A4666;
+            border: 1px solid #4A5676;
+            color: #E6E9F0;
+        }
+
+        .template-question:hover {
+            background-color: #e0e0e0;
+            transform: scale(1.02);
+        }
+
+        body.dark-mode .template-question:hover {
+            background-color: #4A5676;
+        }
+
+        .template-question i {
+            font-size: 16px;
+            color: #666;
+        }
+
+        body.dark-mode .template-question i {
+            color: #E6E9F0;
+        }
+
         /* Chat area */
         .chat-area {
             flex: 1;
             padding: 40px;
             display: flex;
             flex-direction: column;
-            align-items: center; /* Căn giữa các tin nhắn */
+            align-items: center;
             justify-content: flex-end;
             background-color: #fff;
             position: relative;
@@ -458,36 +525,39 @@
         }
 
         .chat-message {
-            max-width: 600px;
             font-size: 16px;
             color: #333;
             margin-bottom: 20px;
-            white-space: pre-wrap; /* Allow wrapping for all messages */
-            word-break: break-word; /* Ensure long words break */
-            margin-left: auto; /* Center messages */
-            margin-right: auto; /* Center messages */
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-left: auto;
+            margin-right: auto;
             display: flex;
             flex-direction: column;
         }
 
         .chat-message.user {
+            max-width: 400px;
             background-color: #e0e0e0;
             padding: 15px 25px;
             border-radius: 10px;
-            text-align: justify; /* Justify text to distribute evenly */
+            text-align: justify;
             display: flex;
-            align-items: flex-start; /* Align text to the top of the bubble */
+            align-items: flex-start;
+            margin-left: 400px;
+            margin-right: 20px;
         }
 
         .chat-message.bot {
+            max-width: 800px;
             position: relative;
             background-color: #f5f5f5;
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
             padding: 15px 20px;
-            text-align: justify; /* Changed from text-align: left to justify text */
+            text-align: justify;
             display: flex;
-            align-items: flex-start; /* Align text to the top of the bubble */
+            align-items: flex-start;
         }
 
         body.dark-mode .chat-message {
@@ -496,6 +566,8 @@
 
         body.dark-mode .chat-message.user {
             background-color: #4A5676;
+            margin-left: 420px;
+            margin-right: 20px;
         }
 
         body.dark-mode .chat-message.bot {
@@ -525,7 +597,7 @@
         }
 
         .chat-message.bot .speaker-icon.speaking {
-            color: #007bff !important; /* Màu xanh khi đang phát âm thanh */
+            color: #007bff !important;
         }
 
         /* Loading Container */
@@ -592,7 +664,7 @@
             border-radius: 25px;
             padding: 10px 15px;
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
@@ -648,7 +720,7 @@
         }
 
         .input-box .icons .mic-btn.recording {
-            color: #ff0000; /* Màu đỏ khi đang ghi âm */
+            color: #ff0000;
         }
 
         .input-box .icons .send-btn {
@@ -723,11 +795,22 @@
             <div class="title">IDC-Bot</div>
         </div>
 
+        <!-- Welcome Message -->
+        <div class="welcome-message">
+            Bạn đang làm về cái gì?
+        </div>
+
+        <!-- Template Questions -->
+        <div class="template-questions">
+            <div class="template-question"><i class="fas fa-book"></i> Quy trình vận hành </div>
+            <div class="template-question"><i class="fas fa-lightbulb"></i> Thông tin nhân sự </div>
+            <div class="template-question"><i class="fas fa-file-alt"></i> Lịch trực </div>
+            <div class="template-question"><i class="fas fa-plus"></i> Thêm </div>
+        </div>
+
         <!-- Chat Area -->
         <div class="chat-area" id="chatArea">
-            <div class="chat-message" id="initialMessage">
-                Bạn đang làm về cái gì?
-            </div>
+            <!-- Messages will be dynamically added here -->
         </div>
 
         <!-- Input Area -->
@@ -780,8 +863,14 @@
             chatArea.innerHTML = '';
             chatInput.value = '';
             currentChatId = null; // Reset the current chat session
-            // Re-add initial message
-            chatArea.innerHTML = '<div class="chat-message" id="initialMessage">Bạn đang làm về cái gì?</div>';
+        });
+
+        // Template Questions Functionality
+        document.querySelectorAll('.template-question').forEach(template => {
+            template.addEventListener('click', () => {
+                chatInput.value = template.textContent.replace(/<i[^>]*><\/i>\s*/, ''); // Loại bỏ icon trước khi điền vào input
+                chatInput.focus();
+            });
         });
 
         // Dropdown menu functionality
@@ -885,7 +974,7 @@
                 removeChatFromStorage(id);
                 if (currentChatId === id) {
                     currentChatId = null;
-                    chatArea.innerHTML = '<div class="chat-message" id="initialMessage">Bạn đang làm về cái gì?</div>';
+                    chatArea.innerHTML = '';
                 }
             }
         });
@@ -1109,12 +1198,6 @@
                 chat.messages.forEach(message => {
                     appendMessage(message.text, message.type);
                 });
-            } else {
-                const initialMessage = document.createElement('div');
-                initialMessage.className = 'chat-message';
-                initialMessage.id = 'initialMessage';
-                initialMessage.textContent = 'Bạn đang làm về cái gì?';
-                chatArea.appendChild(initialMessage);
             }
 
             chatArea.scrollTop = chatArea.scrollHeight;
@@ -1213,7 +1296,7 @@
                 msg.appendChild(contentWrapper);
             } else if (type === 'error') {
                 msg.textContent = text;
-                msg.style.color = '#ff0000'; // Màu đỏ cho tin nhắn lỗi
+                msg.style.color = '#ff0000';
             } else {
                 msg.textContent = text;
             }
@@ -1238,44 +1321,17 @@
             return 'speechSynthesis' in window;
         }
 
-        // Function to get the Vietnamese voice
-        function getVietnameseVoice() {
-            return new Promise((resolve) => {
-                let voices = window.speechSynthesis.getVoices();
-                if (voices.length === 0) {
-                    // Nếu danh sách giọng chưa tải, chờ sự kiện voiceschanged
-                    window.speechSynthesis.onvoiceschanged = () => {
-                        voices = window.speechSynthesis.getVoices();
-                        resolve(voices.find(voice => voice.lang === 'vi-VN' || voice.lang.startsWith('vi-')) || null);
-                    };
-                } else {
-                    resolve(voices.find(voice => voice.lang === 'vi-VN' || voice.lang.startsWith('vi-')) || null);
-                }
-            });
-        }
-
-        // Function to speak text using Web Speech API with Vietnamese voice
-        async function speakText(text, speakerIcon) {
+        // Function to speak text using Web Speech API
+        function speakText(text, speakerIcon) {
             if (!isSpeechSynthesisSupported()) {
                 alert('Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.');
                 return;
             }
-
             const utterance = new SpeechSynthesisUtterance(text);
-            const vietnameseVoice = await getVietnameseVoice();
-
-            // Đặt ngôn ngữ mặc định là vi-VN
             utterance.lang = 'vi-VN';
-            utterance.rate = 1; // Tốc độ nói
-            utterance.pitch = 1; // Cao độ giọng
-            utterance.volume = 1; // Âm lượng
-
-            // Nếu có giọng tiếng Việt, sử dụng nó
-            if (vietnameseVoice) {
-                utterance.voice = vietnameseVoice;
-            } else {
-                console.warn('Không tìm thấy giọng nói tiếng Việt, sử dụng giọng mặc định với ngôn ngữ vi-VN.');
-            }
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
 
             document.querySelectorAll('.speaker-icon.speaking').forEach(icon => {
                 icon.classList.remove('speaking');
@@ -1293,13 +1349,6 @@
             utterance.onend = () => {
                 isSpeaking = false;
                 speakerIcon.classList.remove('speaking');
-            };
-
-            utterance.onerror = (event) => {
-                console.error('Lỗi khi phát âm thanh:', event.error);
-                isSpeaking = false;
-                speakerIcon.classList.remove('speaking');
-                alert('Đã xảy ra lỗi khi phát âm thanh. Vui lòng thử lại.');
             };
 
             window.speechSynthesis.speak(utterance);
@@ -1384,11 +1433,6 @@
             const chatBox = document.getElementById("chatArea");
             const question = input.value.trim();
             if (!question) return;
-
-            const initialMessage = document.getElementById("initialMessage");
-            if (initialMessage) {
-                initialMessage.remove();
-            }
 
             let userMessage;
             if (currentChatId) {
