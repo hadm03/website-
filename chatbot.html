@@ -536,43 +536,49 @@
             flex-direction: column;
         }
 
+        /* Chat message user (câu hỏi của người dùng) */
         .chat-message.user {
             max-width: 400px;
             background-color: #e0e0e0;
             padding: 15px 25px;
-            border-radius: 10px;
+            border-radius: 20px; /* Tất cả các góc đều tròn như nhau */
             text-align: justify;
             display: flex;
             align-items: flex-start;
-            margin-left: 400px;
-            margin-right: 20px;
+            margin-left: auto; /* Sát lề phải */
+            margin-right: 295px; /* Dịch sang bên trái một chút */
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Bóng nhẹ */
         }
 
+        /* Dark mode cho câu hỏi */
+        body.dark-mode .chat-message.user {
+            background-color: #4A5676;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Chat message bot (câu trả lời của bot) */
         .chat-message.bot {
             max-width: 800px;
             position: relative;
             background-color: #f5f5f5;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-            padding: 15px 20px;
+            border-radius: 20px; /* Tất cả các góc đều tròn như nhau */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Bóng nhẹ hơn */
+            padding: 20px 25px; /* Tăng padding cho thoáng */
             text-align: justify;
             display: flex;
             align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        /* Dark mode cho câu trả lời */
+        body.dark-mode .chat-message.bot {
+            background-color: #3A4666;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         body.dark-mode .chat-message {
             color: #E6E9F0;
-        }
-
-        body.dark-mode .chat-message.user {
-            background-color: #4A5676;
-            margin-left: 420px;
-            margin-right: 20px;
-        }
-
-        body.dark-mode .chat-message.bot {
-            background-color: #3A4666;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         }
 
         /* Speaker Icon Styling */
@@ -1064,8 +1070,7 @@
             const currentDate = new Date();
             storedHistory.forEach(item => {
                 const daysDiff = getDaysDifference(currentDate, item.createdAt);
-                const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
-
+                const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.createdAt);
                 if (item.pinned || daysDiff === 0) {
                     todaySection.appendChild(historyItem);
                 } else if (daysDiff === 1) {
@@ -1274,6 +1279,10 @@
             let storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
             storedChats = storedChats.filter(chat => chat.id !== id.toString());
             localStorage.setItem('chatConversations', JSON.stringify(storedChats));
+            if (currentChatId == id) {
+                currentChatId = null;
+                chatArea.innerHTML = '';
+            }
         }
 
         // Function to append a message to the chat area
@@ -1324,11 +1333,12 @@
         // Function to speak text using Web Speech API
         function speakText(text, speakerIcon) {
             if (!isSpeechSynthesisSupported()) {
-                alert('Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.');
+                alert('Browser does not support text reading functionality.');
                 return;
             }
+
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'vi-VN';
+            utterance.lang = 'en-US';
             utterance.rate = 1;
             utterance.pitch = 1;
             utterance.volume = 1;
@@ -1365,13 +1375,13 @@
         // Speech Recognition Setup
         function setupSpeechRecognition() {
             if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-                alert('Trình duyệt của bạn không hỗ trợ tính năng nhận diện giọng nói.');
+                alert('Error: Your browser does not support speech recognition.');
                 return null;
             }
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const recognition = new SpeechRecognition();
-            recognition.lang = 'vi-VN';
+            recognition.lang = 'en-US';
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
@@ -1391,27 +1401,27 @@
             isRecording = true;
             document.getElementById('micBtn').classList.add('recording');
             chatInput.value = '';
-            chatInput.placeholder = 'Đang nghe...';
+            chatInput.placeholder = 'Listening...';
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 chatInput.value = transcript;
-                chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                chatInput.placeholder = 'Ask anything';
                 document.getElementById('micBtn').classList.remove('recording');
                 isRecording = false;
             };
 
             recognition.onerror = (event) => {
-                console.error('Lỗi nhận diện giọng nói:', event.error);
-                alert('Lỗi nhận diện giọng nói: ' + event.error);
-                chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                console.error('Speech recognition error:', event.error);
+                alert('Speech recognition error: ' + event.error);
+                chatInput.placeholder = 'Ask anything';
                 document.getElementById('micBtn').classList.remove('recording');
                 isRecording = false;
             };
 
             recognition.onend = () => {
                 if (isRecording) {
-                    chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                    chatInput.placeholder = 'Ask anything';
                     document.getElementById('micBtn').classList.remove('recording');
                     isRecording = false;
                 }
@@ -1456,7 +1466,7 @@
             const loadingContainer = createLoadingContainer();
 
             try {
-                const response = await fetch("https://open-baboon-oddly.ngrok-free.app/databot", {
+                const response = await fetch("https://open-baboon-api.com/databoot", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -1473,14 +1483,14 @@
 
                 // Kiểm tra dữ liệu trả về từ API
                 if (!data || !data.data || !data.data.bot_Answer) {
-                    throw new Error("API không trả về dữ liệu hợp lệ hoặc không có câu trả lời.");
+                    throw new Error('API does not return valid response or no response available.');
                 }
 
                 let botResponse = cleanMeta(data.data.bot_Answer);
 
                 // Nếu không có câu trả lời hợp lệ
                 if (!botResponse || botResponse.trim() === '') {
-                    botResponse = "❔ Bot không trả lời.";
+                    botResponse = "❔ Bot did not respond.";
                 }
 
                 // Remove loading container
@@ -1490,20 +1500,20 @@
                 appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date().toISOString() });
 
             } catch (error) {
-                console.error('Lỗi khi gọi API:', error);
+                console.error('Error calling API:', error);
 
                 // Remove loading container on error
                 loadingContainer.remove();
 
                 let errorMessage;
                 if (error.message.includes('HTTP error')) {
-                    errorMessage = `❌ Lỗi: Không thể kết nối đến server. (${error.message})`;
-                } else if (error.message.includes('API không trả về dữ liệu')) {
-                    errorMessage = `❌ Lỗi: API không trả về câu trả lời hợp lệ. Vui lòng thử lại.`;
+                    errorMessage = `❌ Error: Cannot connect to server. (${error.message})`;
+                } else if (error.message.includes('API does not return data')) {
+                    errorMessage = `❌ Error: API did not return a valid response. Please try again.`;
                 } else if (error.message.includes('Failed to fetch')) {
-                    errorMessage = `❌ Lỗi: Không thể kết nối đến API. Vui lòng kiểm tra mạng hoặc URL API.`;
+                    errorMessage = `❌ Error: Cannot connect to API. Please check your network or API URL.`;
                 } else {
-                    errorMessage = `❌ Lỗi không xác định: ${error.message}`;
+                    errorMessage = `❌ Unknown error: ${error.message}`;
                 }
 
                 appendMessage(errorMessage, 'error');
