@@ -1333,12 +1333,12 @@
         // Function to speak text using Web Speech API
         function speakText(text, speakerIcon) {
             if (!isSpeechSynthesisSupported()) {
-                alert('Browser does not support text reading functionality.');
+                alert('Trình duyệt không hỗ trợ chức năng đọc văn bản.');
                 return;
             }
 
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
+            utterance.lang = 'vi-VN'; // Set to Vietnamese
             utterance.rate = 1;
             utterance.pitch = 1;
             utterance.volume = 1;
@@ -1375,13 +1375,13 @@
         // Speech Recognition Setup
         function setupSpeechRecognition() {
             if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-                alert('Error: Your browser does not support speech recognition.');
+                alert('Lỗi: Trình duyệt của bạn không hỗ trợ nhận diện giọng nói.');
                 return null;
             }
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
+            recognition.lang = 'vi-VN'; // Set to Vietnamese
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
@@ -1401,27 +1401,35 @@
             isRecording = true;
             document.getElementById('micBtn').classList.add('recording');
             chatInput.value = '';
-            chatInput.placeholder = 'Listening...';
+            chatInput.placeholder = 'Đang lắng nghe...';
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 chatInput.value = transcript;
-                chatInput.placeholder = 'Ask anything';
+                chatInput.placeholder = 'Hỏi bất kỳ điều gì';
                 document.getElementById('micBtn').classList.remove('recording');
                 isRecording = false;
             };
 
             recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                alert('Speech recognition error: ' + event.error);
-                chatInput.placeholder = 'Ask anything';
+                console.error('Lỗi nhận diện giọng nói:', event.error);
+                let errorMessage = 'Lỗi nhận diện giọng nói: ' + event.error;
+                if (event.error === 'no-speech') {
+                    errorMessage = 'Không nhận diện được giọng nói. Vui lòng thử lại.';
+                } else if (event.error === 'language-not-supported') {
+                    errorMessage = 'Ngôn ngữ tiếng Việt không được hỗ trợ trên trình duyệt này.';
+                } else if (event.error === 'not-allowed') {
+                    errorMessage = 'Vui lòng cấp quyền sử dụng micro cho trình duyệt.';
+                }
+                alert(errorMessage);
+                chatInput.placeholder = 'Hỏi bất kỳ điều gì';
                 document.getElementById('micBtn').classList.remove('recording');
                 isRecording = false;
             };
 
             recognition.onend = () => {
                 if (isRecording) {
-                    chatInput.placeholder = 'Ask anything';
+                    chatInput.placeholder = 'Hỏi bất kỳ điều gì';
                     document.getElementById('micBtn').classList.remove('recording');
                     isRecording = false;
                 }
