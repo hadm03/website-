@@ -86,6 +86,26 @@
             color: #fff;
         }
 
+        .navigation-hint {
+            position: fixed;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 20px;
+            background-color: #ffffff; /* White color */
+            border-radius: 5px;
+            z-index: 19;
+            opacity: 0.7;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for contrast */
+            display: block;
+        }
+
+        .taskbar-container:hover ~ .navigation-hint,
+        .taskbar-trigger:hover ~ .navigation-hint {
+            display: none;
+        }
+
         .history-panel {
             position: absolute;
             top: 0;
@@ -310,6 +330,56 @@
             display: block;
         }
 
+        .user-dropdown {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: #fff;
+            min-width: 120px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        body.dark-mode .user-dropdown-content {
+            background-color: #3A4666;
+        }
+
+        .user-dropdown-content a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+            padding: 10px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        body.dark-mode .user-dropdown-content a {
+            color: #E6E9F0;
+        }
+
+        .user-dropdown-content a:hover {
+            background-color: #f0f0f0;
+        }
+
+        body.dark-mode .user-dropdown-content a:hover {
+            background-color: #4A5676;
+        }
+
+        .user-dropdown.active .user-dropdown-content {
+            display: block;
+        }
+
         .main-content {
             flex: 1;
             display: flex;
@@ -392,12 +462,13 @@
         .header .user {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
 
         .header .user i {
-            font-size: 14px;
+            font-size: 18px;
             color: #666;
+            padding-right: 5px;
         }
 
         body.dark-mode .header .user i {
@@ -407,6 +478,8 @@
         .header .user span {
             font-size: 14px;
             color: #333;
+            font-weight: 500;
+            padding-left: 5px;
         }
 
         body.dark-mode .header .user span {
@@ -503,7 +576,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end;
             background-color: #fff;
             position: relative;
         }
@@ -539,7 +611,7 @@
         }
 
         body.dark-mode .chat-message.user {
-            background-color: #4A5676;
+            background-color: rgb(93, 103, 134);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
@@ -550,10 +622,11 @@
             border-radius: 20px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             padding: 20px 25px;
-            text-align: justify;
+            text-align: left;
             display: flex;
             align-items: flex-start;
             margin-bottom: 20px;
+            margin-left: 300px; /* Increased from 40px to 100px to shift right */
         }
 
         body.dark-mode .chat-message.bot {
@@ -645,7 +718,7 @@
 
         .input-box {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             background-color: #fff;
             border: 1px solid #e0e0e0;
             border-radius: 25px;
@@ -653,6 +726,7 @@
             width: 100%;
             max-width: 500px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            min-height: 40px;
         }
 
         body.dark-mode .input-box {
@@ -660,24 +734,69 @@
             border: 1px solid #4A5676;
         }
 
-        .input-box input {
+        .textarea-container {
             flex: 1;
+            position: relative;
+            margin-right: 10px;
+        }
+
+        .input-box textarea {
+            width: 100%;
             border: none;
             background: none;
             outline: none;
             font-size: 14px;
             color: #333;
+            resize: none;
+            min-height: 20px;
+            line-height: 20px;
+            padding-top: 2px;
+            max-height: 100px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #fff;
         }
 
-        body.dark-mode .input-box input {
+        body.dark-mode .input-box textarea {
             color: #E6E9F0;
+            scrollbar-color: #888 #3A4666;
         }
 
-        .input-box input::placeholder {
+        .input-box textarea::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .input-box textarea::-webkit-scrollbar-track {
+            background: #fff;
+            border-radius: 2px;
+        }
+
+        .input-box textarea::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 2px;
+        }
+
+        .input-box textarea::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        body.dark-mode .input-box textarea::-webkit-scrollbar-track {
+            background: #3A4666;
+        }
+
+        body.dark-mode .input-box textarea::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+        body.dark-mode .input-box textarea::-webkit-scrollbar-thumb:hover {
+            background: #bbb;
+        }
+
+        .input-box textarea::placeholder {
             color: #999;
         }
 
-        body.dark-mode .input-box input::placeholder {
+        body.dark-mode .input-box textarea::placeholder {
             color: #A0A5C0;
         }
 
@@ -749,10 +868,12 @@
         <div class="taskbar">
             <i class="fas fa-list-ul" aria-label="Mở lịch sử trò chuyện" role="button"></i>
             <i class="fas fa-pen" id="clearChat" aria-label="Xóa cuộc trò chuyện" role="button"></i>
+            <i class="fas fa-file-alt" id="documentIcon" aria-label="Tài liệu" role="button"></i>
             <i class="fas fa-cog" aria-label="Cài đặt" role="button"></i>
             <i class="fas fa-sun" id="themeToggle" aria-label="Chuyển đổi giao diện sáng/tối" role="button"></i>
         </div>
     </div>
+    <div class="navigation-hint"></div>
     <div class="history-panel" id="historyPanel">
         <h3>Lịch sử trò chuyện</h3>
         <div class="history-section" id="todaySection">
@@ -765,12 +886,20 @@
             <h4>3 ngày trước</h4>
         </div>
     </div>
-    <div class="main-content">
+    <div class="main-content" id="mainContent">
         <div class="header">
             <div class="left">
                 <img src="https://fptjobs.com/public/img/fpt-telecom.png" alt="FPT Telecom Logo" class="logo">
             </div>
-            <div class="user"></div>
+            <div class="user">
+                <div class="user-dropdown" id="userDropdown">
+                    <i class="fas fa-user"></i>
+                    <span id="userName">Guest</span>
+                    <div class="user-dropdown-content">
+                        <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="title-section">
             <div class="title">IDC-Bot</div>
@@ -785,7 +914,9 @@
         <div class="chat-area" id="chatArea"></div>
         <div class="input-area">
             <div class="input-box">
-                <input type="text" placeholder="Hỏi bất kỳ điều gì" id="chatInput">
+                <div class="textarea-container">
+                    <textarea placeholder="Hỏi bất kỳ điều gì" id="chatInput"></textarea>
+                </div>
                 <div class="icons">
                     <i class="fas fa-link" aria-label="Tải lên tệp" role="button"></i>
                     <i class="fas fa-microphone mic-btn" id="micBtn" aria-label="Ghi âm" role="button"></i>
@@ -799,6 +930,64 @@
         let isSpeaking = false;
         let isRecording = false;
         let recognition = null;
+
+        // Function to sanitize text to prevent XSS
+        function sanitizeText(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load user information
+        function loadUserInfo() {
+            const userData = JSON.parse(localStorage.getItem('user'));
+            const userNameSpan = document.getElementById('userName');
+            if (userData && userData.account_name) {
+                userNameSpan.textContent = sanitizeText(userData.account_name);
+            } else {
+                userNameSpan.textContent = 'Guest';
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('chatHistory');
+            localStorage.removeItem('chatConversations');
+            window.location.href = 'index.html';
+        }
+
+        // Toggle user dropdown
+        const userDropdown = document.getElementById('userDropdown');
+        const logoutBtn = document.getElementById('logoutBtn');
+        userDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('active');
+        });
+
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.user-dropdown')) {
+                userDropdown.classList.remove('active');
+            }
+            if (e.target.classList.contains('ellipsis')) {
+                e.stopPropagation();
+                const dropdown = e.target.closest('.dropdown');
+                document.querySelectorAll('.dropdown').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('active');
+                });
+                dropdown.classList.toggle('active');
+            } else if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        });
 
         const historyPanel = document.getElementById('historyPanel');
         const listIcon = document.querySelector('.taskbar .fa-list-ul');
@@ -821,33 +1010,21 @@
         const clearChatIcon = document.getElementById('clearChat');
         const chatArea = document.getElementById('chatArea');
         const chatInput = document.getElementById('chatInput');
+        const mainContent = document.getElementById('mainContent');
 
         clearChatIcon.addEventListener('click', () => {
             chatArea.innerHTML = '';
             chatInput.value = '';
-            currentChatId = null;
+            scrollToBottom();
+            adjustTextareaHeight();
         });
 
         document.querySelectorAll('.template-question').forEach(template => {
             template.addEventListener('click', () => {
                 chatInput.value = template.textContent.replace(/<i[^>]*><\/i>\s*/, '');
                 chatInput.focus();
+                adjustTextareaHeight();
             });
-        });
-
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('ellipsis')) {
-                e.stopPropagation();
-                const dropdown = e.target.closest('.dropdown');
-                document.querySelectorAll('.dropdown').forEach(d => {
-                    if (d !== dropdown) d.classList.remove('active');
-                });
-                dropdown.classList.toggle('active');
-            } else if (!e.target.closest('.dropdown')) {
-                document.querySelectorAll('.dropdown').forEach(dropdown => {
-                    dropdown.classList.remove('active');
-                });
-            }
         });
 
         function saveEditedName(historyItem, input, originalText) {
@@ -932,6 +1109,7 @@
                 if (currentChatId === id) {
                     currentChatId = null;
                     chatArea.innerHTML = '';
+                    scrollToBottom();
                 }
             }
         });
@@ -1073,7 +1251,7 @@
             historyItem.innerHTML = `
                 <div class="text-container">
                     <span class="pin-icon" style="display: ${isPinned ? 'inline-block' : 'none'};"><i class="fas fa-thumbtack"></i></span>
-                    <span class="text" data-fulltext="${fullText}">${displayText}</span>
+                    <span class="text" data-fulltext="${sanitizeText(fullText)}">${displayText}</span>
                 </div>
                 <span class="timestamp">${timeElapsed}</span>
                 <div class="dropdown">
@@ -1135,19 +1313,16 @@
         }
 
         function displayChatHistory(id) {
-            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML = '';
             const storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
             const chat = storedChats.find(chat => chat.id === id.toString());
-
-            chatArea.innerHTML = '';
 
             if (chat && chat.messages.length > 0) {
                 chat.messages.forEach(message => {
                     appendMessage(message.text, message.type);
                 });
             }
-
-            chatArea.scrollTop = chatArea.scrollHeight;
+            scrollToBottom();
         }
 
         function addHistoryToStorage(id, text) {
@@ -1217,7 +1392,17 @@
             if (currentChatId === id) {
                 currentChatId = null;
                 chatArea.innerHTML = '';
+                scrollToBottom();
             }
+        }
+
+        function scrollToBottom() {
+            requestAnimationFrame(() => {
+                mainContent.scrollTop = mainContent.scrollHeight;
+                setTimeout(() => {
+                    mainContent.scrollTop = mainContent.scrollHeight;
+                }, 0);
+            });
         }
 
         function appendMessage(text, type) {
@@ -1243,8 +1428,8 @@
             } else {
                 msg.textContent = text;
             }
-            document.getElementById("chatArea").appendChild(msg);
-            chatArea.scrollTop = chatArea.scrollHeight;
+            chatArea.appendChild(msg);
+            scrollToBottom();
             return msg;
         }
 
@@ -1255,8 +1440,15 @@
                 <div class="loading-spinner"></div>
                 <span class="loading-text">Vui lòng chờ trong giây lát...</span>
             `;
-            document.getElementById("chatArea").appendChild(loadingContainer);
+            chatArea.appendChild(loadingContainer);
+            scrollToBottom();
             return loadingContainer;
+        }
+
+        function adjustTextareaHeight() {
+            const textarea = document.getElementById('chatInput');
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 100)}px`;
         }
 
         function isSpeechSynthesisSupported() {
@@ -1326,6 +1518,7 @@
                 isRecording = false;
                 document.getElementById('micBtn').classList.remove('recording');
                 chatInput.placeholder = 'Hỏi bất kỳ điều gì';
+                adjustTextareaHeight();
                 return;
             }
 
@@ -1339,6 +1532,7 @@
             document.getElementById('micBtn').classList.add('recording');
             chatInput.value = '';
             chatInput.placeholder = 'Đang lắng nghe...';
+            adjustTextareaHeight();
 
             const timeoutId = setTimeout(() => {
                 if (isRecording) {
@@ -1354,6 +1548,7 @@
                 chatInput.placeholder = 'Hỏi bất kỳ điều gì';
                 document.getElementById('micBtn').classList.remove('recording');
                 isRecording = false;
+                adjustTextareaHeight();
             };
 
             recognition.onerror = (event) => {
@@ -1380,6 +1575,7 @@
                 chatInput.placeholder = 'Hỏi bất kỳ điều gì';
                 document.getElementById('micBtn').classList.remove('recording');
                 isRecording = false;
+                adjustTextareaHeight();
             };
 
             recognition.onend = () => {
@@ -1388,6 +1584,7 @@
                     chatInput.placeholder = 'Hỏi bất kỳ điều gì';
                     document.getElementById('micBtn').classList.remove('recording');
                     isRecording = false;
+                    adjustTextareaHeight();
                 }
             };
 
@@ -1406,7 +1603,6 @@
 
         async function sendQuestion(attempt = 1, maxAttempts = 3) {
             const input = document.getElementById("chatInput");
-            const chatBox = document.getElementById("chatArea");
             const question = sanitizeInput(input.value.trim());
             if (!question) return;
 
@@ -1426,6 +1622,7 @@
             }
 
             input.value = '';
+            adjustTextareaHeight();
             const loadingContainer = createLoadingContainer();
 
             try {
@@ -1462,6 +1659,7 @@
                 loadingContainer.remove();
                 appendMessage(botResponse, 'bot');
                 appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date().toISOString() });
+                scrollToBottom();
 
             } catch (error) {
                 console.error('Lỗi khi gọi API:', error);
@@ -1495,24 +1693,28 @@
                 const errorMsg = appendMessage(errorMessage, 'error');
                 errorMsg.appendChild(retryButton);
                 appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date().toISOString() });
+                scrollToBottom();
             }
-
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         document.getElementById('micBtn').addEventListener('click', startSpeechRecognition);
         document.getElementById('sendBtn').addEventListener('click', () => sendQuestion(1, 3));
+        document.getElementById('documentIcon').addEventListener('click', () => {
+            window.location.href = 'document.html';
+        });
 
+        document.getElementById('chatInput').addEventListener('input', adjustTextareaHeight);
         document.getElementById('chatInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 sendQuestion(1, 3);
             }
         });
 
         window.addEventListener('load', () => {
             loadHistoryFromStorage();
+            loadUserInfo();
             setInterval(updateHistorySections, 60000);
-            // Check microphone support on load
             if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
                 const micBtn = document.getElementById('micBtn');
                 micBtn.classList.add('disabled');
@@ -1521,6 +1723,8 @@
                     appendMessage('❌ Trình duyệt này không hỗ trợ nhận diện giọng nói.', 'error');
                 });
             }
+            adjustTextareaHeight();
+            scrollToBottom();
         });
     </script>
 </body>
