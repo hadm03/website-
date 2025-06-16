@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Manager</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 95%;
+      height: 95%;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ddd;
+    }
+    .search-bar {
+      display: flex;
+      align-items: center;
+    }
+    .search-bar input {
+      padding: 8px;
+      width: 200px;
+      border: 1px solid #ddd;
+      border-radius: 5px 0 0 5px;
+      outline: none;
+    }
+    .search-bar button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-left: none;
+      border-radius: 0 5px 5px 0;
+      background: #fff;
+      cursor: pointer;
+    }
+    .view-options button {
+      background: none;
+      border: none;
+      margin: 0 5px;
+      font-size: 18px;
+      cursor: pointer;
+      color: #7f8c8d;
+    }
+    .view-options .active-view {
+      color: #2c3e50;
+    }
+    .user-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .user-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .content {
+      display: flex;
+      flex: 1;
+      padding: 20px;
+    }
+    .documents-table {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table th {
+      background: #ecf0f1;
+      padding: 12px;
+      text-align: left;
+      border-bottom: 2px solid #ddd;
+      position: sticky;
+      top: 0;
+    }
+    .table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      color: #34495e;
+    }
+    .table tbody tr {
+      background-color: #f9f9f9;
+    }
+    .table .file-type {
+      margin-right: 10px;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #fff;
+    }
+    .upload-area {
+      width: 300px;
+      padding: 20px;
+      background: #fff;
+      border: 2px dashed #ccc;
+      text-align: center;
+      border-radius: 10px;
+      margin-left: 20px;
+    }
+    .upload-area p {
+      color: #7f8c8d;
+      margin: 0 0 10px;
+    }
+    .upload-area button {
+      padding: 8px 15px;
+      background: #2c3e50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .upload-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .progress {
+      width: 100px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 8px;
+      background: #3498db;
+      border-radius: 5px;
+    }
+    .share-btn {
+      width: 100%;
+      padding: 10px;
+      background: #2c3e50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+    .cancel-btn {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      background-color: #e74c3c;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .cancel-btn::before,
+    .cancel-btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 2px;
+      background-color: #fff;
+      border-radius: 1px;
+    }
+    .cancel-btn::before {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+    .cancel-btn::after {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
+    .trash-icon {
+      width: 24px;
+      height: 24px;
+      margin-left: 100px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="search-bar">
+        <input type="text" placeholder="Find Documents">
+        <button>🔍</button>
+      </div>
+      <div class="view-options">
+        <button class="active-view">📏</button>
+        <button>🗂️</button>
+        <button>≡</button>
+      </div>
+      <div class="user-icon">
+        <img src="user-icon.png" alt="User">
+      </div>
+    </div>
+    <div class="content">
+      <div class="documents-table">
+        <div style="font-size: 18px; color: #2c3e50; margin-bottom: 10px;">Documents</div>
+        <div style="display: flex; margin-bottom: 10px;">
+          <select style="margin-right: 10px; padding: 5px;">
+            <option>All Documents</option>
+          </select>
+          <select style="padding: 5px;">
+            <option>Documents Type</option>
+          </select>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Shared</th>
+              <th>Type</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Các hàng sẽ được thêm động khi tải file lên -->
+          </tbody>
+        </table>
+      </div>
+      <div class="upload-area">
+        <p>Drag And Drop Your Files Here</p>
+        <input type="file" id="fileInput" style="display: none;" accept=".doc,.docx,.pdf,.xls,.xlsx" multiple>
+        <button id="uploadButton">Upload file</button>
+        <div id="uploadItems" class="hidden">
+          <!-- Các file tải lên sẽ được hiển thị ở đây -->
+        </div>
+        <button class="share-btn">Share</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const viewButtons = document.querySelectorAll('.view-options button');
+    viewButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        viewButtons.forEach(btn => btn.classList.remove('active-view'));
+        button.classList.add('active-view');
+      });
+    });
+
+    const uploadButton = document.getElementById('uploadButton');
+    const fileInput = document.getElementById('fileInput');
+    const uploadItems = document.getElementById('uploadItems');
+    const tableBody = document.querySelector('.table tbody');
+
+    uploadButton.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', () => {
+      const files = Array.from(fileInput.files);
+      if (files.length > 0) {
+        files.forEach(file => {
+          addUploadItem(file);
+        });
+        uploadItems.classList.remove('hidden');
+      }
+    });
+
+    function addUploadItem(file) {
+      const uploadItem = document.createElement('div');
+      uploadItem.classList.add('upload-item');
+      uploadItem.innerHTML = `
+        ${file.name}
+        <div class="progress"><div class="progress-bar" style="width: 0%;"></div></div>
+        <button class="cancel-btn"></button>
+      `;
+      uploadItems.appendChild(uploadItem);
+
+      let progress = 0;
+      const progressBar = uploadItem.querySelector('.progress-bar');
+      const interval = setInterval(() => {
+        progress += 10;
+        progressBar.style.width = `${progress}%`;
+        if (progress >= 100) {
+          clearInterval(interval);
+          addToDocuments(file, uploadItem);
+        }
+      }, 500);
+    }
+
+    function addToDocuments(file, uploadItem) {
+      const row = document.createElement('tr');
+      const fileType = getFileType(file.name);
+      const fileSize = formatFileSize(file.size);
+      const currentDate = new Date().toLocaleString();
+      const icon = getFileIcon(fileType);
+
+      row.innerHTML = `
+        <td><span class="file-type" style="background:${getFileColor(fileType)};">${icon}</span> ${file.name}</td>
+        <td>${fileSize}</td>
+        <td>1 Member</td>
+        <td>File</td>
+        <td>${currentDate} <img src="https://media.istockphoto.com/id/1569064610/vi/vec-to/bi%E1%BB%83u-t%C6%B0%E1%BB%A3ng-th%C3%B9ng-r%C3%A1c-c%C3%B3-th%E1%BB%83-t%C3%A1i-ch%E1%BA%BF-d%C3%A2y-chuy%E1%BB%81n-t%C3%A1i-ch%E1%BA%BF.jpg?s=612x612&w=0&k=20&c=6E0f3VEvhEVTVBRFV6d95jhzub5TtgsQxtOYkdvwT3E=" class="trash-icon" alt="Trash Icon"></td>
+      `;
+      tableBody.appendChild(row);
+
+      // Thêm sự kiện xóa file
+      const trashIcon = row.querySelector('.trash-icon');
+      trashIcon.addEventListener('click', () => {
+        row.remove();
+        if (uploadItem) uploadItem.remove();
+      });
+    }
+
+    function getFileType(fileName) {
+      const extension = fileName.split('.').pop().toLowerCase();
+      if (extension === 'pdf') return 'PDF';
+      if (extension === 'doc' || extension === 'docx') return 'Word';
+      if (extension === 'xls' || extension === 'xlsx') return 'Excel';
+      return 'Unknown';
+    }
+
+    function getFileIcon(fileType) {
+      switch (fileType) {
+        case 'PDF':
+          return '📄';
+        case 'Word':
+          return '📝';
+        case 'Excel':
+          return '📊';
+        default:
+          return '📁';
+      }
+    }
+
+    function getFileColor(fileType) {
+      switch (fileType) {
+        case 'PDF':
+          return '#e74c3c';
+        case 'Word':
+          return '#3498db';
+        case 'Excel':
+          return '#2ecc71';
+        default:
+          return '#7f8c8d';
+      }
+    }
+
+    function formatFileSize(size) {
+      if (size < 1024) return `${size} B`;
+      else if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
+      else return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    }
+  </script>
+</body>
+</html>
