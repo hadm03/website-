@@ -139,6 +139,7 @@
       padding: 5px;
       border: 1px solid #ddd;
       border-radius: 5px;
+      position: relative;
     }
     .progress {
       width: 100px;
@@ -193,7 +194,7 @@
     .trash-icon {
       width: 24px;
       height: 24px;
-      margin-left: 100px;
+      margin-left: 15px;
       cursor: pointer;
       vertical-align: middle;
     }
@@ -294,16 +295,26 @@
       let progress = 0;
       const progressBar = uploadItem.querySelector('.progress-bar');
       const interval = setInterval(() => {
-        progress += 10;
-        progressBar.style.width = `${progress}%`;
+        if (progress < 100) {
+          progress += 10;
+          progressBar.style.width = `${progress}%`;
+        }
         if (progress >= 100) {
           clearInterval(interval);
-          addToDocuments(file, uploadItem);
+          uploadItem.remove(); // Xóa toàn bộ upload-item khi tải thành công
+          addToDocuments(file);
         }
       }, 500);
+
+      // Thêm sự kiện hủy khi nhấp vào "X"
+      const cancelBtn = uploadItem.querySelector('.cancel-btn');
+      cancelBtn.addEventListener('click', () => {
+        clearInterval(interval); // Dừng tiến trình tải
+        uploadItem.remove();    // Xóa item upload
+      });
     }
 
-    function addToDocuments(file, uploadItem) {
+    function addToDocuments(file) {
       const row = document.createElement('tr');
       const fileType = getFileType(file.name);
       const fileSize = formatFileSize(file.size);
@@ -323,7 +334,6 @@
       const trashIcon = row.querySelector('.trash-icon');
       trashIcon.addEventListener('click', () => {
         row.remove();
-        if (uploadItem) uploadItem.remove();
       });
     }
 
