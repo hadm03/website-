@@ -98,6 +98,7 @@
       padding: 12px;
       border-bottom: 1px solid #eee;
       color: #34495e;
+      cursor: pointer;
     }
     .table tbody tr {
       background-color: #f9f9f9;
@@ -198,14 +199,53 @@
       cursor: pointer;
       vertical-align: middle;
     }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      width: 90%;
+      height: 90%;
+      max-width: 1000px;
+      max-height: 90vh;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .close {
+      float: right;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .pdf-viewer, .doc-viewer, .xls-viewer {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+    .content-placeholder {
+      padding: 20px;
+      white-space: pre-wrap;
+    }
   </style>
+  <!-- Thêm thư viện mammoth.js để đọc file Word -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.19/mammoth.browser.min.js"></script>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <div class="search-bar">
-        <input type="text" placeholder="Find Documents">
-        <button>🔍</button>
+        <input type="text" id="searchInput" placeholder="Find Documents">
+        <button id="searchButton">🔍</button>
       </div>
       <div class="view-options">
         <button class="active-view">📏</button>
@@ -220,11 +260,14 @@
       <div class="documents-table">
         <div style="font-size: 18px; color: #2c3e50; margin-bottom: 10px;">Documents</div>
         <div style="display: flex; margin-bottom: 10px;">
-          <select style="margin-right: 10px; padding: 5px;">
-            <option>All Documents</option>
+          <select id="documentFilter" style="margin-right: 10px; padding: 5px;">
+            <option value="all">All Documents</option>
           </select>
-          <select style="padding: 5px;">
-            <option>Documents Type</option>
+          <select id="typeFilter" style="padding: 5px;">
+            <option value="all">Documents Type</option>
+            <option value="Word">Word</option>
+            <option value="PDF">PDF</option>
+            <option value="Excel">Excel</option>
           </select>
         </div>
         <table class="table">
@@ -237,7 +280,7 @@
               <th>Date</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="tableBody">
             <!-- Các hàng sẽ được thêm động khi tải file lên -->
           </tbody>
         </table>
@@ -253,6 +296,15 @@
       </div>
     </div>
   </div>
+  <div id="fileModal" class="modal">
+    <div class="modal-content">
+      <span class="close">×</span>
+      <h2 id="modalFileName"></h2>
+      <iframe id="pdfViewer" class="pdf-viewer" src="" frameborder="0" style="display: none;"></iframe>
+      <div id="docViewer" class="doc-viewer content-placeholder" style="display: none;"></div>
+      <div id="xlsViewer" class="xls-viewer content-placeholder" style="display: none;"></div>
+    </div>
+  </div>
 
   <script>
     const viewButtons = document.querySelectorAll('.view-options button');
@@ -266,7 +318,20 @@
     const uploadButton = document.getElementById('uploadButton');
     const fileInput = document.getElementById('fileInput');
     const uploadItems = document.getElementById('uploadItems');
-    const tableBody = document.querySelector('.table tbody');
+    const tableBody = document.getElementById('tableBody');
+    const fileModal = document.getElementById('fileModal');
+    const modalFileName = document.getElementById('modalFileName');
+    const pdfViewer = document.getElementById('pdfViewer');
+    const docViewer = document.getElementById('docViewer');
+    const xlsViewer = document.getElementById('xlsViewer');
+    const closeModal = document.querySelector('.close');
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const documentFilter = document.getElementById('documentFilter');
+    const typeFilter = document.getElementById('typeFilter');
+
+    // Lưu trữ các file đã tải lên cùng với nội dung
+    const uploadedFiles = new Map();
 
     uploadButton.addEventListener('click', () => {
       fileInput.click();
@@ -277,6 +342,7 @@
       if (files.length > 0) {
         files.forEach(file => {
           addUploadItem(file);
+          readFileContent(file); // Đọc nội dung file
         });
         uploadItems.classList.remove('hidden');
       }
@@ -311,7 +377,34 @@
       cancelBtn.addEventListener('click', () => {
         clearInterval(interval); // Dừng tiến trình tải
         uploadItem.remove();    // Xóa item upload
+        uploadedFiles.delete(file.name); // Xóa file khỏi Map
       });
+    }
+
+    function readFileContent(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        if (getFileType(file.name) === 'PDF') {
+          uploadedFiles.set(file.name, { url: URL.createObjectURL(file), content: content, type: getFileType(file.name) });
+        } else if (getFileType(file.name) === 'Word') {
+          mammoth.extractRawText({arrayBuffer: content})
+            .then(result => {
+              uploadedFiles.set(file.name, { url: URL.createObjectURL(file), content: result.value, type: getFileType(file.name) });
+            })
+            .catch(err => {
+              console.error("Lỗi khi đọc file Word:", err);
+              uploadedFiles.set(file.name, { url: URL.createObjectURL(file), content: "Không thể đọc nội dung file Word.", type: getFileType(file.name) });
+            });
+        } else {
+          uploadedFiles.set(file.name, { url: URL.createObjectURL(file), content: content, type: getFileType(file.name) });
+        }
+      };
+      if (getFileType(file.name) === 'PDF') {
+        reader.readAsArrayBuffer(file); // Đọc PDF dưới dạng ArrayBuffer
+      } else {
+        reader.readAsArrayBuffer(file); // Đọc Word/Excel dưới dạng ArrayBuffer cho mammoth
+      }
     }
 
     function addToDocuments(file) {
@@ -322,10 +415,10 @@
       const icon = getFileIcon(fileType);
 
       row.innerHTML = `
-        <td><span class="file-type" style="background:${getFileColor(fileType)};">${icon}</span> ${file.name}</td>
+        <td><span class="file-type" style="background:${getFileColor(fileType)};">${icon}</span> <span class="file-name">${file.name}</span></td>
         <td>${fileSize}</td>
         <td>1 Member</td>
-        <td>File</td>
+        <td>${fileType}</td>
         <td>${currentDate} <img src="https://media.istockphoto.com/id/1569064610/vi/vec-to/bi%E1%BB%83u-t%C6%B0%E1%BB%A3ng-th%C3%B9ng-r%C3%A1c-c%C3%B3-th%E1%BB%83-t%C3%A1i-ch%E1%BA%BF-d%C3%A2y-chuy%E1%BB%81n-t%C3%A1i-ch%E1%BA%BF.jpg?s=612x612&w=0&k=20&c=6E0f3VEvhEVTVBRFV6d95jhzub5TtgsQxtOYkdvwT3E=" class="trash-icon" alt="Trash Icon"></td>
       `;
       tableBody.appendChild(row);
@@ -334,7 +427,83 @@
       const trashIcon = row.querySelector('.trash-icon');
       trashIcon.addEventListener('click', () => {
         row.remove();
+        uploadedFiles.delete(file.name); // Xóa file khỏi Map khi xóa
       });
+
+      // Thêm sự kiện xem nội dung file
+      const fileNameElement = row.querySelector('.file-name');
+      fileNameElement.addEventListener('click', () => {
+        showFileContent(file.name);
+      });
+    }
+
+    function showFileContent(fileName) {
+      modalFileName.textContent = fileName;
+      const fileData = uploadedFiles.get(fileName);
+      if (!fileData) {
+        pdfViewer.style.display = 'none';
+        docViewer.style.display = 'none';
+        xlsViewer.style.display = 'none';
+        docViewer.textContent = 'Không thể mở file. Vui lòng tải lại file.';
+        docViewer.style.display = 'block';
+        return;
+      }
+
+      // Ẩn tất cả các viewer
+      pdfViewer.style.display = 'none';
+      docViewer.style.display = 'none';
+      xlsViewer.style.display = 'none';
+
+      if (fileData.type === 'PDF') {
+        pdfViewer.src = fileData.url;
+        pdfViewer.style.display = 'block';
+      } else if (fileData.type === 'Word') {
+        docViewer.innerHTML = fileData.content.replace(/\n/g, '<br>') || 'Không thể đọc nội dung file Word.';
+        docViewer.style.display = 'block';
+      } else if (fileData.type === 'Excel') {
+        xlsViewer.textContent = fileData.content || 'Không thể hiển thị nội dung Excel đầy đủ. Vui lòng dùng phần mềm hỗ trợ.';
+        xlsViewer.style.display = 'block';
+      }
+      fileModal.style.display = 'flex';
+    }
+
+    closeModal.addEventListener('click', () => {
+      fileModal.style.display = 'none';
+      pdfViewer.src = ''; // Xóa nội dung iframe khi đóng modal
+    });
+
+    window.addEventListener('click', (event) => {
+      if (event.target === fileModal) {
+        fileModal.style.display = 'none';
+        pdfViewer.src = ''; // Xóa nội dung iframe khi nhấp ngoài modal
+      }
+    });
+
+    // Tìm kiếm file
+    searchButton.addEventListener('click', filterTable);
+    searchInput.addEventListener('input', filterTable);
+
+    // Lọc theo loại file
+    typeFilter.addEventListener('change', filterTable);
+
+    function filterTable() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const typeFilterValue = typeFilter.value.toLowerCase();
+      const rows = tableBody.getElementsByTagName('tr');
+
+      for (let row of rows) {
+        const fileName = row.querySelector('.file-name').textContent.toLowerCase();
+        const fileType = row.cells[3].textContent.toLowerCase(); // Cột Type
+
+        const matchesSearch = fileName.includes(searchTerm);
+        const matchesType = typeFilterValue === 'all' || fileType === typeFilterValue;
+
+        if (matchesSearch && matchesType) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
     }
 
     function getFileType(fileName) {
