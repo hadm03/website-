@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document Manager</title>
+  <link rel="icon" type="image/png" href="https://hrc.com.vn/wp-content/uploads/2024/09/FPT-Telecom.png">
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -236,9 +237,15 @@
       padding: 20px;
       white-space: pre-wrap;
     }
+    .data-leaning-viewer {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      white-space: pre-wrap;
+    }
   </style>
-  <!-- Thêm thư viện mammoth.js để đọc file Word -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.19/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -262,12 +269,15 @@
         <div style="display: flex; margin-bottom: 10px;">
           <select id="documentFilter" style="margin-right: 10px; padding: 5px;">
             <option value="all">All Documents</option>
+            <option value="Thông tin nhân sự">Thông tin nhân sự</option>
+            <option value="Lịch trực vận hành tháng 6">Lịch trực vận hành tháng 6</option>
           </select>
           <select id="typeFilter" style="padding: 5px;">
             <option value="all">Documents Type</option>
             <option value="Word">Word</option>
             <option value="PDF">PDF</option>
             <option value="Excel">Excel</option>
+            <option value="Folder">Folder</option>
           </select>
         </div>
         <table class="table">
@@ -301,7 +311,7 @@
       <span class="close">×</span>
       <h2 id="modalFileName"></h2>
       <iframe id="pdfViewer" class="pdf-viewer" src="" frameborder="0" style="display: none;"></iframe>
-      <div id="docViewer" class="doc-viewer content-placeholder" style="display: none;"></div>
+      <div id="docViewer" class="doc-viewer content-placeholder data-leaning-viewer" style="display: none;"></div>
       <div id="xlsViewer" class="xls-viewer content-placeholder" style="display: none;"></div>
     </div>
   </div>
@@ -330,8 +340,22 @@
     const documentFilter = document.getElementById('documentFilter');
     const typeFilter = document.getElementById('typeFilter');
 
-    // Lưu trữ các file đã tải lên cùng với nội dung
+    // Lưu trữ các file và folder đã tải lên
     const uploadedFiles = new Map();
+    const API_BASE_URL = 'https://open-baboon-oddly.ngrok-free.app';
+    const accountId = localStorage.getItem('account_id') || 1; // Giả định account_id từ login
+
+    // Thêm hai folder mặc định
+    function addDefaultFolders() {
+      const folders = [
+        { name: 'Thông tin nhân sự', type: 'Folder' },
+        { name: 'Lịch trực vận hành tháng 6', type: 'Folder' }
+      ];
+      folders.forEach(folder => {
+        uploadedFiles.set(folder.name, { type: folder.type });
+        addToDocuments(folder);
+      });
+    }
 
     uploadButton.addEventListener('click', () => {
       fileInput.click();
@@ -342,7 +366,7 @@
       if (files.length > 0) {
         files.forEach(file => {
           addUploadItem(file);
-          readFileContent(file); // Đọc nội dung file
+          readFileContent(file);
         });
         uploadItems.classList.remove('hidden');
       }
@@ -367,17 +391,16 @@
         }
         if (progress >= 100) {
           clearInterval(interval);
-          uploadItem.remove(); // Xóa toàn bộ upload-item khi tải thành công
+          uploadItem.remove();
           addToDocuments(file);
         }
       }, 500);
 
-      // Thêm sự kiện hủy khi nhấp vào "X"
       const cancelBtn = uploadItem.querySelector('.cancel-btn');
       cancelBtn.addEventListener('click', () => {
-        clearInterval(interval); // Dừng tiến trình tải
-        uploadItem.remove();    // Xóa item upload
-        uploadedFiles.delete(file.name); // Xóa file khỏi Map
+        clearInterval(interval);
+        uploadItem.remove();
+        uploadedFiles.delete(file.name);
       });
     }
 
@@ -388,7 +411,7 @@
         if (getFileType(file.name) === 'PDF') {
           uploadedFiles.set(file.name, { url: URL.createObjectURL(file), content: content, type: getFileType(file.name) });
         } else if (getFileType(file.name) === 'Word') {
-          mammoth.extractRawText({arrayBuffer: content})
+          mammoth.extractRawText({ arrayBuffer: content })
             .then(result => {
               uploadedFiles.set(file.name, { url: URL.createObjectURL(file), content: result.value, type: getFileType(file.name) });
             })
@@ -401,55 +424,57 @@
         }
       };
       if (getFileType(file.name) === 'PDF') {
-        reader.readAsArrayBuffer(file); // Đọc PDF dưới dạng ArrayBuffer
+        reader.readAsArrayBuffer(file);
       } else {
-        reader.readAsArrayBuffer(file); // Đọc Word/Excel dưới dạng ArrayBuffer cho mammoth
+        reader.readAsArrayBuffer(file);
       }
     }
 
-    function addToDocuments(file) {
+    function addToDocuments(item) {
       const row = document.createElement('tr');
-      const fileType = getFileType(file.name);
-      const fileSize = formatFileSize(file.size);
-      const currentDate = new Date().toLocaleString();
-      const icon = getFileIcon(fileType);
+      const itemType = item.type || getFileType(item.name);
+      const fileSize = item.size ? formatFileSize(item.size) : '-';
+      const currentDate = moment().format('DD-MM-YYYY, HH:mm:ss');
+      const icon = getFileIcon(itemType);
 
       row.innerHTML = `
-        <td><span class="file-type" style="background:${getFileColor(fileType)};">${icon}</span> <span class="file-name">${file.name}</span></td>
+        <td><span class="file-type" style="background:${getFileColor(itemType)};">${icon}</span> <span class="file-name">${item.name}</span></td>
         <td>${fileSize}</td>
         <td>1 Member</td>
-        <td>${fileType}</td>
+        <td>${itemType}</td>
         <td>${currentDate} <img src="https://media.istockphoto.com/id/1569064610/vi/vec-to/bi%E1%BB%83u-t%C6%B0%E1%BB%A3ng-th%C3%B9ng-r%C3%A1c-c%C3%B3-th%E1%BB%83-t%C3%A1i-ch%E1%BA%BF-d%C3%A2y-chuy%E1%BB%81n-t%C3%A1i-ch%E1%BA%BF.jpg?s=612x612&w=0&k=20&c=6E0f3VEvhEVTVBRFV6d95jhzub5TtgsQxtOYkdvwT3E=" class="trash-icon" alt="Trash Icon"></td>
       `;
       tableBody.appendChild(row);
 
-      // Thêm sự kiện xóa file
       const trashIcon = row.querySelector('.trash-icon');
       trashIcon.addEventListener('click', () => {
         row.remove();
-        uploadedFiles.delete(file.name); // Xóa file khỏi Map khi xóa
+        uploadedFiles.delete(item.name);
       });
 
-      // Thêm sự kiện xem nội dung file
       const fileNameElement = row.querySelector('.file-name');
       fileNameElement.addEventListener('click', () => {
-        showFileContent(file.name);
+        if (itemType === 'Folder') {
+          showDataLeaningContent(item.name);
+        } else {
+          showFileContent(item.name);
+        }
       });
     }
 
     function showFileContent(fileName) {
       modalFileName.textContent = fileName;
       const fileData = uploadedFiles.get(fileName);
-      if (!fileData) {
+      if (!fileData || fileData.type === 'Folder') {
         pdfViewer.style.display = 'none';
         docViewer.style.display = 'none';
         xlsViewer.style.display = 'none';
-        docViewer.textContent = 'Không thể mở file. Vui lòng tải lại file.';
+        docViewer.textContent = fileData && fileData.type === 'Folder' ? 'Không thể mở thư mục.' : 'Không thể mở file. Vui lòng tải lại file.';
         docViewer.style.display = 'block';
+        fileModal.style.display = 'flex';
         return;
       }
 
-      // Ẩn tất cả các viewer
       pdfViewer.style.display = 'none';
       docViewer.style.display = 'none';
       xlsViewer.style.display = 'none';
@@ -467,38 +492,71 @@
       fileModal.style.display = 'flex';
     }
 
+    async function showDataLeaningContent(folderName) {
+      modalFileName.textContent = folderName;
+      pdfViewer.style.display = 'none';
+      xlsViewer.style.display = 'none';
+      docViewer.style.display = 'block';
+      docViewer.innerHTML = 'Loading...';
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/data-leaning?account_id=${accountId}`, {
+          headers: {
+            'ngrok-skip-browser-warning': 'true' // Bỏ qua cảnh báo ngrok
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const data = await response.json();
+        const filteredData = data.filter(item => item.leaning_title.toLowerCase() === folderName.toLowerCase());
+
+        if (filteredData.length === 0) {
+          docViewer.innerHTML = 'No content available for this folder.';
+        } else {
+          // Concatenate all leaning_content values, separated by newlines
+          const content = filteredData.map(item => item.leaning_content).join('\n\n');
+          docViewer.innerHTML = content.replace(/\n/g, '<br>') || 'No content available.';
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        docViewer.innerHTML = 'Failed to load content.';
+      }
+      fileModal.style.display = 'flex';
+    }
+
     closeModal.addEventListener('click', () => {
       fileModal.style.display = 'none';
-      pdfViewer.src = ''; // Xóa nội dung iframe khi đóng modal
+      pdfViewer.src = '';
+      docViewer.innerHTML = '';
     });
 
     window.addEventListener('click', (event) => {
       if (event.target === fileModal) {
         fileModal.style.display = 'none';
-        pdfViewer.src = ''; // Xóa nội dung iframe khi nhấp ngoài modal
+        pdfViewer.src = '';
+        docViewer.innerHTML = '';
       }
     });
 
-    // Tìm kiếm file
     searchButton.addEventListener('click', filterTable);
     searchInput.addEventListener('input', filterTable);
-
-    // Lọc theo loại file
+    documentFilter.addEventListener('change', filterTable);
     typeFilter.addEventListener('change', filterTable);
 
     function filterTable() {
       const searchTerm = searchInput.value.toLowerCase();
+      const documentFilterValue = documentFilter.value.toLowerCase();
       const typeFilterValue = typeFilter.value.toLowerCase();
       const rows = tableBody.getElementsByTagName('tr');
 
       for (let row of rows) {
         const fileName = row.querySelector('.file-name').textContent.toLowerCase();
-        const fileType = row.cells[3].textContent.toLowerCase(); // Cột Type
+        const fileType = row.cells[3].textContent.toLowerCase();
 
         const matchesSearch = fileName.includes(searchTerm);
+        const matchesDocument = documentFilterValue === 'all' || fileName === documentFilterValue;
         const matchesType = typeFilterValue === 'all' || fileType === typeFilterValue;
 
-        if (matchesSearch && matchesType) {
+        if (matchesSearch && matchesDocument && matchesType) {
           row.style.display = '';
         } else {
           row.style.display = 'none';
@@ -522,6 +580,8 @@
           return '📝';
         case 'Excel':
           return '📊';
+        case 'Folder':
+          return '📁';
         default:
           return '📁';
       }
@@ -535,6 +595,8 @@
           return '#3498db';
         case 'Excel':
           return '#2ecc71';
+        case 'Folder':
+          return '#f1c40f';
         default:
           return '#7f8c8d';
       }
@@ -545,6 +607,11 @@
       else if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`;
       else return `${(size / (1024 * 1024)).toFixed(2)} MB`;
     }
+
+    // Gọi hàm để thêm các folder mặc định khi tải trang
+    window.onload = () => {
+      addDefaultFolders();
+    };
   </script>
 </body>
 </html>
