@@ -41,7 +41,7 @@
     }
 
     .login-content h2 {
-      margin: -20px 0 30px 0; /* Nâng chữ WELCOME lên */
+      margin: -20px 0 30px 0;
       color: #333;
       text-transform: uppercase;
       font-size: 2.9rem;
@@ -79,7 +79,7 @@
     .input-div > div > h5 {
       position: absolute;
       left: 10px;
-      top: calc(50% - 17px); /* Đẩy chữ Email/Password cao hơn nữa */
+      top: calc(50% - 17px);
       transform: translateY(-50%);
       color: #999;
       font-size: 18px;
@@ -255,7 +255,7 @@
         </div>
         <a href="#">Forgot Password?</a>
         <button type="button" class="btn" onclick="login()">Login</button>
-        <div id="message" style="color: red; margin-top: 10px;"></div>
+        <div id="message" style="color: red; margin-top: 2px;"></div>
       </form>
     </div>
   </div>
@@ -288,6 +288,14 @@
       passwordInput.setAttribute('type', type);
       this.classList.toggle('fa-eye');
       this.classList.toggle('fa-eye-slash');
+    });
+
+    // Add Enter key listener for login
+    document.getElementById('loginForm').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        login();
+      }
     });
 
     async function login() {
