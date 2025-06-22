@@ -359,6 +359,52 @@
   </div>
 
   <script>
+    // Function to sanitize text to prevent XSS
+    function sanitizeText(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load user information from localStorage
+    function loadUserInfo() {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      const userNameSpan = document.getElementById('userName');
+      if (userData && userData.account_name) {
+        userNameSpan.textContent = sanitizeText(userData.account_name);
+      } else {
+        userNameSpan.textContent = 'Guest';
+      }
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('user');
+      localStorage.removeItem('account_id');
+      window.location.href = 'index.html';
+    }
+
+    // Toggle user dropdown
+    const userDropdown = document.getElementById('userDropdown');
+    const logoutBtn = document.getElementById('logoutBtn');
+    userDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropdown.querySelector('.user-dropdown-content').style.display = 
+        userDropdown.querySelector('.user-dropdown-content').style.display === 'block' ? 'none' : 'block';
+    });
+
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      logout();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.user-dropdown')) {
+        userDropdown.querySelector('.user-dropdown-content').style.display = 'none';
+      }
+    });
+
     const viewButtons = document.querySelectorAll('.view-options button');
     viewButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -656,6 +702,7 @@
 
     window.onload = () => {
       addDefaultFolders();
+      loadUserInfo(); // Load user info when the page loads
     };
   </script>
 </body>
