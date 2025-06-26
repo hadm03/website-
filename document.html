@@ -207,7 +207,7 @@
       margin-top: 10px;
     }
     .hidden {
-      display: none;
+      display: none !important;
     }
     .cancel-btn {
       position: relative;
@@ -252,6 +252,7 @@
       background: rgba(0, 0, 0, 0.5);
       align-items: center;
       justify-content: center;
+      z-index: 1000; /* Tăng z-index để hiển thị trên header */
     }
     .modal-content {
       background: #fff;
@@ -260,8 +261,8 @@
       width: 90%;
       height: 90%;
       max-width: 1000px;
-      max-height: 90vh;
-      overflow: auto;
+      max-height: 100%;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
@@ -561,24 +562,25 @@
         docViewer.textContent = fileData && fileData.type === 'Folder' ? 'Không thể mở thư mục.' : 'Không thể mở file. Vui lòng tải lại file.';
         docViewer.style.display = 'block';
         fileModal.style.display = 'flex';
-        return;
-      }
+        document.querySelector('.header').classList.add('hidden'); // Ẩn header
+      } else {
+        pdfViewer.style.display = 'none';
+        docViewer.style.display = 'none';
+        xlsViewer.style.display = 'none';
 
-      pdfViewer.style.display = 'none';
-      docViewer.style.display = 'none';
-      xlsViewer.style.display = 'none';
-
-      if (fileData.type === 'PDF') {
-        pdfViewer.src = fileData.url;
-        pdfViewer.style.display = 'block';
-      } else if (fileData.type === 'Word') {
-        docViewer.innerHTML = fileData.content.replace(/\n/g, '<br>') || 'Không thể đọc nội dung file Word.';
-        docViewer.style.display = 'block';
-      } else if (fileData.type === 'Excel') {
-        xlsViewer.textContent = fileData.content || 'Không thể hiển thị nội dung Excel đầy đủ. Vui lòng dùng phần mềm hỗ trợ.';
-        xlsViewer.style.display = 'block';
+        if (fileData.type === 'PDF') {
+          pdfViewer.src = fileData.url;
+          pdfViewer.style.display = 'block';
+        } else if (fileData.type === 'Word') {
+          docViewer.innerHTML = fileData.content.replace(/\n/g, '<br>') || 'Không thể đọc nội dung file Word.';
+          docViewer.style.display = 'block';
+        } else if (fileData.type === 'Excel') {
+          xlsViewer.textContent = fileData.content || 'Không thể hiển thị nội dung Excel đầy đủ. Vui lòng dùng phần mềm hỗ trợ.';
+          xlsViewer.style.display = 'block';
+        }
+        fileModal.style.display = 'flex';
+        document.querySelector('.header').classList.add('hidden'); // Ẩn header
       }
-      fileModal.style.display = 'flex';
     }
 
     async function showDataLeaningContent(folderName) {
@@ -609,12 +611,14 @@
         docViewer.innerHTML = 'Failed to load content.';
       }
       fileModal.style.display = 'flex';
+      document.querySelector('.header').classList.add('hidden'); // Ẩn header
     }
 
     closeModal.addEventListener('click', () => {
       fileModal.style.display = 'none';
       pdfViewer.src = '';
       docViewer.innerHTML = '';
+      document.querySelector('.header').classList.remove('hidden'); // Hiện lại header khi đóng modal
     });
 
     window.addEventListener('click', (event) => {
@@ -622,6 +626,7 @@
         fileModal.style.display = 'none';
         pdfViewer.src = '';
         docViewer.innerHTML = '';
+        document.querySelector('.header').classList.remove('hidden'); // Hiện lại header khi đóng modal
       }
     });
 
@@ -705,5 +710,3 @@
       loadUserInfo(); // Load user info when the page loads
     };
   </script>
-</body>
-</html>
