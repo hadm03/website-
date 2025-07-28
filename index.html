@@ -19,10 +19,31 @@
       width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-columns: 1fr;
-      grid-gap: 7rem;
-      padding: 0 2rem;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      justify-items: center;
       background-color: #ffffff;
+      padding: 0 2rem;
+    }
+    .logo {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 120px;
+      height: auto;
+      z-index: 1000;
+    }
+    .left-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    .new-left-image {
+      width: 80%;
+      max-width: 600px;
+      height: auto;
     }
     .login-content {
       display: flex;
@@ -32,7 +53,6 @@
     }
     form {
       width: 360px;
-      margin-left: 40%;
     }
     .login-content h2 {
       margin: -20px 0 30px 0;
@@ -165,11 +185,11 @@
     }
     .input-div.pass .toggle-password svg {
       display: block;
-      stroke: #bbb; /* màu xám nhạt mặc định */
+      stroke: #bbb;
       transition: stroke 0.2s;
     }
     .input-div.pass .toggle-password:hover svg {
-      stroke: #1672f3; /* màu xanh khi hover */
+      stroke: #1672f3;
     }
     a {
       display: block;
@@ -202,67 +222,35 @@
     .btn:hover {
       background-position: right;
     }
-    @media screen and (max-width: 1050px) {
-      .container {
-        grid-gap: 5rem;
-      }
-    }
     @media screen and (max-width: 1000px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      .left-section {
+        display: none;
+      }
       form {
         width: 290px;
-        margin-left: 25%;
+        margin: 0 auto;
       }
       .login-content h2 {
         font-size: 2.4rem;
         margin: 8px 0;
       }
     }
-    @media screen and (max-width: 900px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
-      form {
-        margin-left: 15%;
-      }
-    }
-    .logo {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 120px;
-      height: auto;
-      z-index: 1000;
-    }
-    .left-image {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 150px;
-      height: auto;
-      z-index: 1000;
-    }
-    .new-left-image {
-      position: fixed;
-      top: 45%;
-      left: 195px;
-      transform: translateY(-50%);
-      width: 600px;
-      height: auto;
-      z-index: 1000;
-    }
-    /* ẨN ảnh robot trên mobile */
     @media screen and (max-width: 700px) {
-      .new-left-image {
-        display: none !important;
+      form {
+        width: 290px;
       }
     }
   </style>
 </head>
 <body>
-  <img class="left-image" src="https://encrypted-tbn0.gstatic.com/images?q=tbn9GcSI8FGe4Zv1fOe-wHSNLI49MGdGGRR0GZ3KWwa5E4KylfXEtkyQyb0XDt5y_wL7SjIRops&usqp=CAU" alt="Left Image">
-  <img class="logo" src="https://fptjobs.com/public/img/fpt-telecom.png" alt="FPT Telecom Logo">
-  <img class="new-left-image" src="IDC-BOT.jpg" alt="IDC BOT">
   <div class="container">
+    <img class="logo" src="https://fptjobs.com/public/img/fpt-telecom.png" alt="FPT Telecom Logo">
+    <div class="left-section">
+      <img class="new-left-image" src="IDC-BOT.jpg" alt="IDC BOT">
+    </div>
     <div class="login-content">
       <form id="loginForm" autocomplete="off">
         <h2 class="title">Welcome</h2>
@@ -279,12 +267,10 @@
             <input type="password" class="input" id="password" required autocomplete="off" placeholder=" " />
             <label for="password">Password</label>
             <span class="toggle-password" id="togglePassword">
-              <!-- Icon mắt mở -->
               <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="display:block;">
                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <!-- Icon mắt gạch -->
               <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="display:none;">
                 <path d="M17.94 17.94A10.88 10.88 0 0 1 12 19c-7 0-11-7-11-7a21.77 21.77 0 0 1 5.06-6.06"/>
                 <path d="M1 1l22 22"/>
@@ -343,7 +329,6 @@
       setTimeout(updateFloatingLabels, 300);
     });
 
-    // Toggle show/hide password (SVG icon)
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     const iconEye = document.getElementById('icon-eye');
