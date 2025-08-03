@@ -613,13 +613,14 @@
         }
 
         .chat-message.bot {
-            max-width: 600px; /* Extended for better balance */
+            max-width: 700px; /* Increased for longer response */
             background-color: #f5f5f5;
             border-radius: 20px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             padding: 20px 25px;
             text-align: left;
             align-self: center;
+            margin-right: auto; /* Extends slightly to the left */
             display: flex;
             flex-direction: column;
             width: 100%;
@@ -664,7 +665,7 @@
             justify-content: center;
             gap: 10px;
             margin-bottom: 20px;
-            max-width: 600px; /* Match bot message width */
+            max-width: 700px; /* Matches bot message width */
             width: 100%;
         }
 
@@ -1129,7 +1130,7 @@
                 return 'Vừa xong';
             }
 
-            const now = new Date('2025-08-03T11:08:00+07:00'); // Current date and time
+            const now = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
             const messageTime = new Date(timestamp);
             const diffMs = now - messageTime;
 
@@ -1187,7 +1188,7 @@
                 return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
             });
 
-            const currentDate = new Date('2025-08-03T11:08:00+07:00'); // Current date and time
+            const currentDate = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
             storedHistory.forEach(item => {
                 const daysDiff = getDaysDifference(currentDate, item.createdAt);
                 const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
@@ -1218,7 +1219,7 @@
                 return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
             });
 
-            const currentDate = new Date('2025-08-03T11:08:00+07:00'); // Current date and time
+            const currentDate = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
             storedHistory.forEach(item => {
                 const daysDiff = getDaysDifference(currentDate, item.createdAt);
                 const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
@@ -1323,7 +1324,7 @@
 
         function addHistoryToStorage(id, text) {
             const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-            const now = new Date('2025-08-03T11:08:00+07:00'); // Current date and time
+            const now = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
             const createdAt = now.toISOString();
             const lastMessageAt = createdAt;
             storedHistory.push({ id: id.toString(), text, pinned: false, createdAt, lastMessageAt });
@@ -1350,7 +1351,7 @@
             const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
             const historyIndex = storedHistory.findIndex(item => item.id === id.toString());
             if (historyIndex !== -1) {
-                storedHistory[historyIndex].lastMessageAt = new Date('2025-08-03T11:08:00+07:00').toISOString(); // Current date and time
+                storedHistory[historyIndex].lastMessageAt = new Date('2025-08-03T16:31:00+07:00').toISOString(); // Current date and time
                 localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
             }
             updateHistorySections();
@@ -1605,7 +1606,7 @@
             let userMessage;
             if (currentChatId) {
                 userMessage = appendMessage(question, 'user');
-                appendMessageToChat(currentChatId, { text: question, type: 'user', timestamp: new Date('2025-08-03T11:08:00+07:00').toISOString() }); // Current date and time
+                appendMessageToChat(currentChatId, { text: question, type: 'user', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
             } else {
                 const historyId = window.nextHistoryId++;
                 currentChatId = historyId;
@@ -1614,7 +1615,7 @@
                 const historyItem = createHistoryItem(historyId, question);
                 todaySection.appendChild(historyItem);
                 addHistoryToStorage(historyId, question);
-                addChatToStorage(historyId, [{ text: question, type: 'user', timestamp: new Date('2025-08-03T11:08:00+07:00').toISOString() }]); // Current date and time
+                addChatToStorage(historyId, [{ text: question, type: 'user', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }]); // Current date and time
             }
 
             input.value = '';
@@ -1654,7 +1655,7 @@
 
                 loadingContainer.remove();
                 appendMessage(botResponse, 'bot');
-                appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date('2025-08-03T11:08:00+07:00').toISOString() }); // Current date and time
+                appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
                 scrollToBottom();
 
             } catch (error) {
@@ -1665,7 +1666,7 @@
                 if (error.name === 'AbortError' && attempt < maxAttempts) {
                     errorMessage = `❌ Lỗi: Yêu cầu API hết thời gian (Lần thử ${attempt}/${maxAttempts}). Đang thử lại...`;
                     appendMessage(errorMessage, 'error');
-                    appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date('2025-08-03T11:08:00+07:00').toISOString() }); // Current date and time
+                    appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     return sendQuestion(attempt + 1, maxAttempts);
                 } else if (error.name === 'AbortError') {
@@ -1688,7 +1689,7 @@
                 retryButton.onclick = () => sendQuestion(1, maxAttempts);
                 const errorMsg = appendMessage(errorMessage, 'error');
                 errorMsg.appendChild(retryButton);
-                appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date('2025-08-03T11:08:00+07:00').toISOString() }); // Current date and time
+                appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
                 scrollToBottom();
             }
         }
