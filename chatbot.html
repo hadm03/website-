@@ -928,6 +928,25 @@
         let isRecording = false;
         let recognition = null;
 
+        // ===== Namespaced storage theo tài khoản (per-user) =====
+        const STORAGE = {
+            key(base) {
+                const u = JSON.parse(localStorage.getItem('user'));
+                const uid = u?.account_id ?? u?.id ?? u?.username ?? u?.account_name ?? 'guest';
+                return `${base}:${uid}`;
+            },
+            get(base, fallback = []) {
+                try { return JSON.parse(localStorage.getItem(this.key(base))) ?? fallback; }
+                catch { return fallback; }
+            },
+            set(base, value) {
+                localStorage.setItem(this.key(base), JSON.stringify(value));
+            },
+            remove(base) {
+                localStorage.removeItem(this.key(base));
+            }
+        };
+
         // Function to sanitize text to prevent XSS
         function sanitizeText(text) {
             const div = document.createElement('div');
@@ -948,9 +967,8 @@
 
         // Logout function
         function logout() {
+            // Chỉ xoá phiên đăng nhập, KHÔNG xoá lịch sử của user
             localStorage.removeItem('user');
-            localStorage.removeItem('chatHistory');
-            localStorage.removeItem('chatConversations');
             window.location.href = 'index.html';
         }
 
@@ -972,7 +990,7 @@
             if (!e.target.closest('.user-dropdown')) {
                 userDropdown.classList.remove('active');
             }
-            if (e.target.classList.contains('ellipsis')) {
+            if (e.target.classList && e.target.classList.contains('ellipsis')) {
                 e.stopPropagation();
                 const dropdown = e.target.closest('.dropdown');
                 document.querySelectorAll('.dropdown').forEach(d => {
@@ -1009,7 +1027,14 @@
         const chatInput = document.getElementById('chatInput');
         const mainContent = document.getElementById('mainContent');
 
+        // Clear current chat + remove storage if a chat is selected
         clearChatIcon.addEventListener('click', () => {
+            if (currentChatId) {
+                removeChatFromStorage(currentChatId);
+                removeHistoryFromStorage(currentChatId);
+                currentChatId = null;
+                updateHistorySections();
+            }
             chatArea.innerHTML = '';
             chatInput.value = '';
             scrollToBottom();
@@ -1018,7 +1043,7 @@
 
         document.querySelectorAll('.template-question').forEach(template => {
             template.addEventListener('click', () => {
-                chatInput.value = template.textContent.replace(/<i[^>]*><\/i>\s*/, '');
+                chatInput.value = template.textContent.trim();
                 chatInput.focus();
                 adjustTextareaHeight();
             });
@@ -1046,7 +1071,7 @@
                 const renameBtn = e.target.closest('.rename-item');
                 const historyItem = renameBtn.closest('.history-item');
                 const textSpan = historyItem.querySelector('.text');
-                const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+                const storedHistory = STORAGE.get('chatHistory', []);
                 const item = storedHistory.find(item => item.id === historyItem.dataset.id.toString());
                 const currentName = item ? item.text : textSpan.textContent.trim();
 
@@ -1130,7 +1155,7 @@
                 return 'Vừa xong';
             }
 
-            const now = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
+            const now = new Date(); // dùng thời gian thực
             const messageTime = new Date(timestamp);
             const diffMs = now - messageTime;
 
@@ -1166,7 +1191,7 @@
             const todaySection = document.getElementById('todaySection');
             const yesterdaySection = document.getElementById('yesterdaySection');
             const threeDaysAgoSection = document.getElementById('threeDaysAgoSection');
-            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            let storedHistory = STORAGE.get('chatHistory', []);
             let nextId = 1;
 
             storedHistory.forEach(item => {
@@ -1188,15 +1213,16 @@
                 return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
             });
 
-            const currentDate = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
+            const currentDate = new Date(); // thời gian thực
             storedHistory.forEach(item => {
-                const daysDiff = getDaysDifference(currentDate, item.createdAt);
+                const refTime = item.lastMessageAt || item.createdAt;
+                const daysDiff = getDaysDifference(currentDate, refTime);
                 const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
                 if (item.pinned || daysDiff === 0) {
                     todaySection.appendChild(historyItem);
                 } else if (daysDiff === 1) {
                     yesterdaySection.appendChild(historyItem);
-                } else if (daysDiff >= 3) {
+                } else if (daysDiff >= 2) { // tránh bỏ sót ngày thứ 2
                     threeDaysAgoSection.appendChild(historyItem);
                 }
             });
@@ -1206,7 +1232,7 @@
             const todaySection = document.getElementById('todaySection');
             const yesterdaySection = document.getElementById('yesterdaySection');
             const threeDaysAgoSection = document.getElementById('threeDaysAgoSection');
-            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            let storedHistory = STORAGE.get('chatHistory', []);
             if (storedHistory.length === 0) return;
 
             todaySection.innerHTML = '<h4>Hôm nay</h4>';
@@ -1219,15 +1245,16 @@
                 return new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt);
             });
 
-            const currentDate = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
+            const currentDate = new Date(); // thời gian thực
             storedHistory.forEach(item => {
-                const daysDiff = getDaysDifference(currentDate, item.createdAt);
+                const refTime = item.lastMessageAt || item.createdAt;
+                const daysDiff = getDaysDifference(currentDate, refTime);
                 const historyItem = createHistoryItem(item.id, item.text, item.pinned, item.createdAt, item.lastMessageAt);
                 if (item.pinned || daysDiff === 0) {
                     todaySection.appendChild(historyItem);
                 } else if (daysDiff === 1) {
                     yesterdaySection.appendChild(historyItem);
-                } else if (daysDiff >= 3) {
+                } else if (daysDiff >= 2) {
                     threeDaysAgoSection.appendChild(historyItem);
                 }
             });
@@ -1241,7 +1268,7 @@
             const displayText = truncateText(text);
             const timestamp = lastMessageAt || createdAt;
             const timeElapsed = getTimeElapsed(timestamp);
-            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            const storedHistory = STORAGE.get('chatHistory', []);
             const item = storedHistory.find(item => item.id === id.toString());
             const fullText = item ? item.text : text;
 
@@ -1311,7 +1338,7 @@
 
         function displayChatHistory(id) {
             chatArea.innerHTML = '';
-            const storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
+            const storedChats = STORAGE.get('chatConversations', []);
             const chat = storedChats.find(chat => chat.id === id.toString());
 
             if (chat && chat.messages.length > 0) {
@@ -1323,69 +1350,69 @@
         }
 
         function addHistoryToStorage(id, text) {
-            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-            const now = new Date('2025-08-03T16:31:00+07:00'); // Current date and time
+            const storedHistory = STORAGE.get('chatHistory', []);
+            const now = new Date();
             const createdAt = now.toISOString();
             const lastMessageAt = createdAt;
             storedHistory.push({ id: id.toString(), text, pinned: false, createdAt, lastMessageAt });
-            localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
+            STORAGE.set('chatHistory', storedHistory);
             updateHistorySections();
         }
 
         function addChatToStorage(id, messages) {
-            const storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
+            const storedChats = STORAGE.get('chatConversations', []);
             storedChats.push({ id: id.toString(), messages });
-            localStorage.setItem('chatConversations', JSON.stringify(storedChats));
+            STORAGE.set('chatConversations', storedChats);
         }
 
         function appendMessageToChat(id, message) {
-            const storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
+            const storedChats = STORAGE.get('chatConversations', []);
             const chatIndex = storedChats.findIndex(chat => chat.id === id.toString());
             if (chatIndex !== -1) {
                 storedChats[chatIndex].messages.push(message);
             } else {
                 storedChats.push({ id: id.toString(), messages: [message] });
             }
-            localStorage.setItem('chatConversations', JSON.stringify(storedChats));
+            STORAGE.set('chatConversations', storedChats);
 
-            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            const storedHistory = STORAGE.get('chatHistory', []);
             const historyIndex = storedHistory.findIndex(item => item.id === id.toString());
             if (historyIndex !== -1) {
-                storedHistory[historyIndex].lastMessageAt = new Date('2025-08-03T16:31:00+07:00').toISOString(); // Current date and time
-                localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
+                storedHistory[historyIndex].lastMessageAt = new Date().toISOString();
+                STORAGE.set('chatHistory', storedHistory);
             }
             updateHistorySections();
         }
 
         function updateHistoryStorage(id, newText) {
-            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            const storedHistory = STORAGE.get('chatHistory', []);
             const index = storedHistory.findIndex(item => item.id === id.toString());
             if (index !== -1) {
                 storedHistory[index].text = newText;
-                localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
+                STORAGE.set('chatHistory', storedHistory);
             }
             updateHistorySections();
         }
 
         function updatePinStatus(id, isPinned) {
-            const storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            const storedHistory = STORAGE.get('chatHistory', []);
             const index = storedHistory.findIndex(item => item.id === id.toString());
             if (index !== -1) {
                 storedHistory[index].pinned = isPinned;
-                localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
+                STORAGE.set('chatHistory', storedHistory);
             }
         }
 
         function removeHistoryFromStorage(id) {
-            let storedHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+            let storedHistory = STORAGE.get('chatHistory', []);
             storedHistory = storedHistory.filter(item => item.id !== id.toString());
-            localStorage.setItem('chatHistory', JSON.stringify(storedHistory));
+            STORAGE.set('chatHistory', storedHistory);
         }
 
         function removeChatFromStorage(id) {
-            let storedChats = JSON.parse(localStorage.getItem('chatConversations')) || [];
+            let storedChats = STORAGE.get('chatConversations', []);
             storedChats = storedChats.filter(chat => chat.id !== id.toString());
-            localStorage.setItem('chatConversations', JSON.stringify(storedChats));
+            STORAGE.set('chatConversations', storedChats);
             if (currentChatId === id) {
                 currentChatId = null;
                 chatArea.innerHTML = '';
@@ -1486,7 +1513,7 @@
         }
 
         document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('speaker-icon')) {
+            if (e.target.classList && e.target.classList.contains('speaker-icon')) {
                 const messageText = e.target.parentElement.querySelector('span').textContent;
                 speakText(messageText, e.target);
             }
@@ -1606,7 +1633,7 @@
             let userMessage;
             if (currentChatId) {
                 userMessage = appendMessage(question, 'user');
-                appendMessageToChat(currentChatId, { text: question, type: 'user', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
+                appendMessageToChat(currentChatId, { text: question, type: 'user', timestamp: new Date().toISOString() });
             } else {
                 const historyId = window.nextHistoryId++;
                 currentChatId = historyId;
@@ -1615,12 +1642,15 @@
                 const historyItem = createHistoryItem(historyId, question);
                 todaySection.appendChild(historyItem);
                 addHistoryToStorage(historyId, question);
-                addChatToStorage(historyId, [{ text: question, type: 'user', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }]); // Current date and time
+                addChatToStorage(historyId, [{ text: question, type: 'user', timestamp: new Date().toISOString() }]);
             }
 
             input.value = '';
             adjustTextareaHeight();
             const loadingContainer = createLoadingContainer();
+
+            const userData = JSON.parse(localStorage.getItem('user')) || {};
+            const accountId = userData.account_id ?? userData.id ?? userData.username ?? userData.account_name ?? 'guest';
 
             try {
                 const controller = new AbortController();
@@ -1631,7 +1661,7 @@
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ bot_Question: question, account_id: 1 }),
+                    body: JSON.stringify({ bot_Question: question, account_id: accountId }),
                     signal: controller.signal
                 });
 
@@ -1655,7 +1685,7 @@
 
                 loadingContainer.remove();
                 appendMessage(botResponse, 'bot');
-                appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
+                appendMessageToChat(currentChatId, { text: botResponse, type: 'bot', timestamp: new Date().toISOString() });
                 scrollToBottom();
 
             } catch (error) {
@@ -1666,7 +1696,7 @@
                 if (error.name === 'AbortError' && attempt < maxAttempts) {
                     errorMessage = `❌ Lỗi: Yêu cầu API hết thời gian (Lần thử ${attempt}/${maxAttempts}). Đang thử lại...`;
                     appendMessage(errorMessage, 'error');
-                    appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
+                    appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date().toISOString() });
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     return sendQuestion(attempt + 1, maxAttempts);
                 } else if (error.name === 'AbortError') {
@@ -1689,7 +1719,7 @@
                 retryButton.onclick = () => sendQuestion(1, maxAttempts);
                 const errorMsg = appendMessage(errorMessage, 'error');
                 errorMsg.appendChild(retryButton);
-                appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date('2025-08-03T16:31:00+07:00').toISOString() }); // Current date and time
+                appendMessageToChat(currentChatId, { text: errorMessage, type: 'error', timestamp: new Date().toISOString() });
                 scrollToBottom();
             }
         }
