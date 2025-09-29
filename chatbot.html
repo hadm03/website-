@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Chatbot Interface</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
@@ -711,6 +711,13 @@
         body.dark-mode .input-area {
             background-color: #2A3656;
             border-top: 1px solid #3A4666;
+        }
+
+        /* Sửa phần hiển thị ô nhập trên mobile: Thêm padding-bottom để tránh bị che bởi thanh điều hướng browser (sử dụng safe-area-inset-bottom) */
+        @media screen and (max-width: 767px) {
+            .input-area {
+                padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            }
         }
 
         .input-box {
