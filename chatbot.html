@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Chatbot Interface</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
@@ -13,9 +13,18 @@
             font-family: Arial, sans-serif;
         }
 
+        :root {
+            --vh: 1vh; /* Biến cho chiều cao viewport động */
+        }
+
+        html {
+            height: -webkit-fill-available;
+        }
+
         body {
             display: flex;
-            height: 100vh;
+            height: calc(100 * var(--vh)); /* Sử dụng --vh từ JS để fix bug Safari */
+            min-height: -webkit-fill-available;
             background-color: #fff;
             overflow: hidden;
             transition: background-color 0.3s ease;
@@ -390,6 +399,7 @@
             scrollbar-width: thin;
             scrollbar-color: #ccc #fff;
             position: relative;
+            padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); /* Khoảng trống cho input fixed */
         }
 
         body.dark-mode .main-content {
@@ -703,14 +713,22 @@
             padding: 20px;
             border-top: 1px solid #e0e0e0;
             background-color: #fff;
-            position: sticky;
-            bottom: 0;
+            position: fixed;
+            bottom: env(safe-area-inset-bottom, 0px);
+            left: 0;
+            right: 0;
             z-index: 5;
         }
 
         body.dark-mode .input-area {
             background-color: #2A3656;
             border-top: 1px solid #3A4666;
+        }
+
+        @media screen and (max-width: 767px) {
+            .input-area {
+                padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            }
         }
 
         .input-box {
@@ -923,6 +941,15 @@
         </div>
     </div>
     <script>
+        // Thêm JS để fix viewport bug trên Safari
+        function setVH() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        window.addEventListener('resize', setVH);
+        window.addEventListener('load', setVH);
+        setVH(); // Gọi ngay lập tức
+
         let currentChatId = null;
         let isSpeaking = false;
         let isRecording = false;
